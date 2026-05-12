@@ -12,36 +12,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.myshop.ui.theme.MyShopTheme
+import androidx.activity.compose.setContent
+import com.example.myshop.navigation.AppNavigation
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
         setContent {
-            MyShopTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+            MyShopTheme() {
+                /*
+                 * AppNavigation menjadi root utama aplikasi.
+                 * Dari sini, aplikasi bisa pindah ke Login, Register, dan Dashboard.
+                 */
+                AppNavigation()
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MyShopTheme {
-        Greeting("Android")
     }
 }
