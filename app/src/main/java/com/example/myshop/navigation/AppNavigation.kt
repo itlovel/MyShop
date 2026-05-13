@@ -11,24 +11,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.myshop.ui.components.BottomNavBar
 import com.example.myshop.ui.components.TopBar
-import com.example.myshop.ui.screen.BerandaScreen
-import com.example.myshop.ui.screen.BiayaScreen
-import com.example.myshop.ui.screen.KasScreen
-import com.example.myshop.ui.screen.KasirScreen
-import com.example.myshop.ui.screen.LoginScreen
-import com.example.myshop.ui.screen.RegisterScreen
-import com.example.myshop.ui.screen.StokScreen
+import com.example.myshop.ui.screen.*
 import com.example.myshop.ui.theme.NavyPrimary
 import com.example.myshop.viewmodel.AuthCheckState
 import com.example.myshop.viewmodel.AuthUiState
 import com.example.myshop.viewmodel.AuthViewModel
+import com.example.myshop.viewmodel.KasirViewModel
 
 private val bottomNavRoutes = setOf(
     Screen.Beranda.route,
@@ -38,8 +32,6 @@ private val bottomNavRoutes = setOf(
     Screen.Biaya.route,
 )
 
-
-//  Mapping route
 private fun routeToTitle(route: String?): String = when (route) {
     Screen.Beranda.route -> "Beranda"
     Screen.Kasir.route   -> "Kasir - Transaksi Penjualan"
@@ -50,42 +42,28 @@ private fun routeToTitle(route: String?): String = when (route) {
 }
 
 @Composable
-fun AppNavigation(
-    authViewModel: AuthViewModel = viewModel()
-) {
+fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
     val authCheckState = authViewModel.authCheckState.collectAsStateWithLifecycle()
 
     when (authCheckState.value) {
         is AuthCheckState.Checking -> {
-            Box(
-                modifier         = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) { CircularProgressIndicator(color = NavyPrimary) }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = NavyPrimary)
+            }
         }
-
-        is AuthCheckState.Authenticated -> {
-            MainNavHost(authViewModel = authViewModel, startDestination = Screen.Beranda.route)
-        }
-
-        is AuthCheckState.NotAuthenticated -> {
-            MainNavHost(authViewModel = authViewModel, startDestination = Screen.Login.route)
-        }
+        is AuthCheckState.Authenticated    -> MainNavHost(authViewModel, Screen.Beranda.route)
+        is AuthCheckState.NotAuthenticated -> MainNavHost(authViewModel, Screen.Login.route)
     }
 }
 
-//  Main NavHost dengan Scaffold (TopBar + BottomNav)
 @Composable
-fun MainNavHost(
-    authViewModel    : AuthViewModel,
-    startDestination : String
-) {
+fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
     val navController = rememberNavController()
 
     val email    = authViewModel.email.collectAsStateWithLifecycle()
     val password = authViewModel.password.collectAsStateWithLifecycle()
     val uiState  = authViewModel.uiState.collectAsStateWithLifecycle()
 
-    // Navigasi setelah login/register berhasil → Beranda
     LaunchedEffect(uiState.value) {
         if (uiState.value is AuthUiState.Success) {
             navController.navigate(Screen.Beranda.route) {
@@ -95,22 +73,18 @@ fun MainNavHost(
         }
     }
 
-    val currentRoute = navController
-        .currentBackStackEntryAsState().value
-        ?.destination?.route
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val showChrome   = currentRoute in bottomNavRoutes
 
-    val showChrome = currentRoute in bottomNavRoutes
+    // KasirViewModel di-hoist di sini agar tidak di-recreate setiap navigasi
+    val kasirViewModel: KasirViewModel = viewModel()
 
     Scaffold(
         topBar = {
-            if (showChrome) {
-                TopBar(title = routeToTitle(currentRoute))
-            }
+            if (showChrome) TopBar(title = routeToTitle(currentRoute))
         },
         bottomBar = {
-            if (showChrome) {
-                BottomNavBar(navController = navController)
-            }
+            if (showChrome) BottomNavBar(navController = navController)
         }
     ) { innerPadding ->
         NavHost(
@@ -118,18 +92,15 @@ fun MainNavHost(
             startDestination = startDestination,
             modifier         = Modifier.padding(innerPadding)
         ) {
-            // Auth
             composable(Screen.Login.route) {
                 LoginScreen(
-                    email               = email.value,
-                    password            = password.value,
-                    uiState             = uiState.value,
-                    onEmailChange       = authViewModel::onEmailChange,
-                    onPasswordChange    = authViewModel::onPasswordChange,
-                    onLoginClick        = authViewModel::login,
-                    onNavigateToRegister = {
-                        navController.navigate(Screen.Register.route)
-                    }
+                    email                = email.value,
+                    password             = password.value,
+                    uiState              = uiState.value,
+                    onEmailChange        = authViewModel::onEmailChange,
+                    onPasswordChange     = authViewModel::onPasswordChange,
+                    onLoginClick         = authViewModel::login,
+                    onNavigateToRegister = { navController.navigate(Screen.Register.route) }
                 )
             }
 
@@ -145,7 +116,6 @@ fun MainNavHost(
                 )
             }
 
-            // Main (bottom nav)
             composable(Screen.Beranda.route) {
                 BerandaScreen(
                     onLogoutClick = {
@@ -157,7 +127,10 @@ fun MainNavHost(
                 )
             }
 
-            composable(Screen.Kasir.route) { KasirScreen() }
+            composable(Screen.Kasir.route) {
+                KasirScreen(vm = kasirViewModel)
+            }
+
             composable(Screen.Kas.route)   { KasScreen() }
             composable(Screen.Stok.route)  { StokScreen() }
             composable(Screen.Biaya.route) { BiayaScreen() }
