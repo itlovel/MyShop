@@ -1,7 +1,6 @@
 package com.example.myshop.ui.screen
 
 import androidx.compose.foundation.background
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -17,19 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myshop.ui.theme.*
 
-/**
- * Placeholder composable untuk modul yang belum diimplementasi.
- * Ganti isi composable berikut dengan UI masing-masing modul.
- */
-
-@Composable
-fun KasirScreen() {
-    PlaceholderScreen(
-        icon  = Icons.Default.ShoppingCart,
-        title = "Kasir",
-        desc  = "Modul Transaksi Penjualan\n(Kolaborasi Tim)"
-    )
-}
 
 @Composable
 fun KasScreen() {
@@ -58,17 +44,10 @@ fun BiayaScreen() {
     )
 }
 
-// Helper
 @Composable
-private fun PlaceholderScreen(
-    icon  : ImageVector,
-    title : String,
-    desc  : String
-) {
+private fun PlaceholderScreen(icon: ImageVector, title: String, desc: String) {
     Box(
-        modifier         = Modifier
-            .fillMaxSize()
-            .background(BackgroundLight),
+        modifier         = Modifier.fillMaxSize().background(BackgroundLight),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -83,13 +62,7 @@ private fun PlaceholderScreen(
             Spacer(Modifier.height(16.dp))
             Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
             Spacer(Modifier.height(8.dp))
-            Text(
-                desc,
-                fontSize  = 14.sp,
-                color     = TextSecondary,
-                textAlign = TextAlign.Center,
-                lineHeight = 20.sp
-            )
+            Text(desc, fontSize = 14.sp, color = TextSecondary, textAlign = TextAlign.Center, lineHeight = 20.sp)
         }
     }
 }
