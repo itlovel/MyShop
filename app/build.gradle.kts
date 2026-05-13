@@ -9,9 +9,7 @@ plugins {
 
 android {
     namespace = "com.example.myshop"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.myshop"
@@ -54,20 +52,20 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
 
+    // Icons Extended (untuk ikon lengkap)
+    implementation("androidx.compose.material:material-icons-extended")
+
     // Navigation Compose
-    implementation("androidx.navigation:navigation-compose:2.9.8")
+    implementation("androidx.navigation:navigation-compose:2.9.0")
 
     // ViewModel Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
-
-    // Runtime Compose agar bisa collect state dengan lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
 
     // Supabase BOM
     implementation(platform("io.github.jan-tennert.supabase:bom:3.6.0"))
-
-    // Supabase Auth
     implementation("io.github.jan-tennert.supabase:auth-kt")
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
 
     // Ktor Android Client
     implementation("io.ktor:ktor-client-android:3.4.3")

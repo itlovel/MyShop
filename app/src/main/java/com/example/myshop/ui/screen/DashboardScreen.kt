@@ -1,4 +1,4 @@
-package com.example.myshop.ui
+package com.example.myshop.ui.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
