@@ -1,6 +1,8 @@
 package com.example.myshop.ui.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -30,7 +32,7 @@ fun BottomNavBar(navController: NavController) {
     NavigationBar(
         containerColor = NavyPrimary,
         tonalElevation = 0.dp,
-        modifier        = Modifier.height(64.dp)
+        modifier        = Modifier.height(85.dp)
     ) {
         bottomNavItems.forEach { item ->
             val selected = currentRoute == item.screen.route
@@ -50,11 +52,13 @@ fun BottomNavBar(navController: NavController) {
                     }
                 },
                 icon = {
-                    Icon(
-                        imageVector        = item.icon,
-                        contentDescription = item.label,
-                        modifier           = Modifier.size(22.dp)
-                    )
+                    Box(modifier = Modifier.padding(top = 6.dp)) {
+                        Icon(
+                            imageVector        = item.icon,
+                            contentDescription = item.label,
+                            modifier           = Modifier.size(22.dp)
+                        )
+                    }
                 },
                 label = {
                     Text(
