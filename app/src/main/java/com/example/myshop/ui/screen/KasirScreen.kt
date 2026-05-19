@@ -5,8 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,13 +26,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.myshop.viewmodel.KasirUiState
-import com.example.myshop.viewmodel.KasirViewModel
 import com.example.myshop.model.Kas
 import com.example.myshop.model.KeranjangItem
 import com.example.myshop.model.Pelanggan
 import com.example.myshop.model.Produk
 import com.example.myshop.ui.theme.*
+import com.example.myshop.viewmodel.KasirUiState
+import com.example.myshop.viewmodel.KasirViewModel
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -46,33 +44,35 @@ private fun formatRupiah(value: Double): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KasirScreen(vm: KasirViewModel = viewModel()) {
-    val produkList       by vm.produkList.collectAsStateWithLifecycle()
-    val pelangganList    by vm.pelangganList.collectAsStateWithLifecycle()
-    val kasList          by vm.kasList.collectAsStateWithLifecycle()
-    val pelangganDipilih by vm.pelangganDipilih.collectAsStateWithLifecycle()
-    val kasDipilih       by vm.kasDipilih.collectAsStateWithLifecycle()
-    val keranjang        by vm.keranjang.collectAsStateWithLifecycle()
-    val searchQuery      by vm.searchQuery.collectAsStateWithLifecycle()
-    val jumlahBayar      by vm.jumlahBayar.collectAsStateWithLifecycle()
-    val uiState          by vm.uiState.collectAsStateWithLifecycle()
+    val produkList         by vm.produkList.collectAsStateWithLifecycle()
+    val pelangganList      by vm.pelangganList.collectAsStateWithLifecycle()
+    val kasList            by vm.kasList.collectAsStateWithLifecycle()
+    val pelangganDipilih   by vm.pelangganDipilih.collectAsStateWithLifecycle()
+    val kasDipilih         by vm.kasDipilih.collectAsStateWithLifecycle()
+    val keranjang          by vm.keranjang.collectAsStateWithLifecycle()
+    val searchQuery        by vm.searchQuery.collectAsStateWithLifecycle()
+    val jumlahBayar        by vm.jumlahBayar.collectAsStateWithLifecycle()
+    val uiState            by vm.uiState.collectAsStateWithLifecycle()
+    val isLoadingData      by vm.isLoadingData.collectAsStateWithLifecycle()
     val showPelangganSheet by vm.showPelangganSheet.collectAsStateWithLifecycle()
+    // Collect sebagai StateFlow agar selalu reactive
+    val totalBelanja       by vm.totalBelanja.collectAsStateWithLifecycle()
+    val kembalian          by vm.kembalian.collectAsStateWithLifecycle()
 
     val produkFiltered = remember(produkList, searchQuery) {
         if (searchQuery.isBlank()) produkList
         else produkList.filter { it.nama.contains(searchQuery, ignoreCase = true) }
     }
 
-    // Dialog sukses transaksi
     if (uiState is KasirUiState.Success) {
         TransaksiSuksesDialog(
-            total      = vm.totalBelanja,
-            bayar      = jumlahBayar.toDoubleOrNull() ?: 0.0,
-            kembalian  = vm.kembalian,
-            onDismiss  = { vm.resetUiState() }
+            total     = totalBelanja,
+            bayar     = jumlahBayar.toDoubleOrNull() ?: 0.0,
+            kembalian = kembalian,
+            onDismiss = { vm.resetUiState() }
         )
     }
 
-    // Dialog error
     if (uiState is KasirUiState.Error) {
         AlertDialog(
             onDismissRequest = { vm.resetUiState() },
@@ -84,7 +84,6 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
         )
     }
 
-    // Bottom sheet pilih pelanggan
     if (showPelangganSheet) {
         PelangganBottomSheet(
             pelangganList = pelangganList,
@@ -99,13 +98,13 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
             .background(BackgroundLight)
             .verticalScroll(rememberScrollState())
     ) {
-        // ── Pelanggan ─────────────────────────────────────
+        // Pelanggan
         SectionCard {
             Text(
                 "PELANGGAN (OPSIONAL)",
-                fontSize   = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color      = TextSecondary,
+                fontSize      = 11.sp,
+                fontWeight    = FontWeight.SemiBold,
+                color         = TextSecondary,
                 letterSpacing = 0.8.sp
             )
             Spacer(Modifier.height(10.dp))
@@ -115,50 +114,36 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
-                        .border(
-                            BorderStroke(1.dp, DashedBorder),
-                            RoundedCornerShape(8.dp)
-                        )
+                        .border(BorderStroke(1.dp, DashedBorder), RoundedCornerShape(8.dp))
                         .clickable { vm.showPilihPelanggan() }
                         .padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "+ Select Customer",
-                        color      = TextSecondary,
-                        fontSize   = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Text("+ Select Customer", color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
             } else {
-                PelangganTerpilihCard(
-                    pelanggan = pelangganDipilih!!,
-                    onHapus   = vm::hapusPelanggan
-                )
+                PelangganTerpilihCard(pelanggan = pelangganDipilih!!, onHapus = vm::hapusPelanggan)
             }
         }
 
         Spacer(Modifier.height(12.dp))
 
-        // ── Katalog Produk ────────────────────────────────
+        // Katalog Produk
         SectionCard {
             Text(
                 "KATALOG PRODUK",
-                fontSize   = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color      = TextSecondary,
+                fontSize      = 11.sp,
+                fontWeight    = FontWeight.SemiBold,
+                color         = TextSecondary,
                 letterSpacing = 0.8.sp
             )
             Spacer(Modifier.height(10.dp))
 
-            // Search bar
             OutlinedTextField(
                 value         = searchQuery,
                 onValueChange = vm::onSearchChange,
                 placeholder   = { Text("Cari produk...", color = TextSecondary) },
-                leadingIcon   = {
-                    Icon(Icons.Default.Search, null, tint = TextSecondary)
-                },
+                leadingIcon   = { Icon(Icons.Default.Search, null, tint = TextSecondary) },
                 modifier      = Modifier.fillMaxWidth(),
                 singleLine    = true,
                 shape         = RoundedCornerShape(10.dp),
@@ -170,37 +155,49 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
 
             Spacer(Modifier.height(8.dp))
 
-            if (uiState is KasirUiState.Loading && produkList.isEmpty()) {
-                Box(
-                    modifier         = Modifier.fillMaxWidth().padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) { CircularProgressIndicator(color = NavyPrimary, modifier = Modifier.size(28.dp)) }
-            } else if (produkFiltered.isEmpty()) {
-                Text(
-                    "Produk tidak ditemukan",
-                    color    = TextSecondary,
-                    modifier = Modifier.padding(vertical = 16.dp).fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-            } else {
-                produkFiltered.forEach { produk ->
-                    ProdukItem(
-                        produk  = produk,
-                        onTambah = { vm.tambahKeKeranjang(produk) }
-                    )
+            when {
+                isLoadingData -> {
+                    Box(
+                        modifier         = Modifier.fillMaxWidth().padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = NavyPrimary, modifier = Modifier.size(28.dp))
+                    }
+                }
+                produkFiltered.isEmpty() && !isLoadingData -> {
+                    Column(
+                        modifier            = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            if (searchQuery.isBlank()) "Belum ada produk" else "Produk tidak ditemukan",
+                            color = TextSecondary
+                        )
+                        if (searchQuery.isBlank()) {
+                            Spacer(Modifier.height(8.dp))
+                            TextButton(onClick = vm::retryLoad) {
+                                Text("Muat ulang", color = NavyPrimary)
+                            }
+                        }
+                    }
+                }
+                else -> {
+                    produkFiltered.forEach { produk ->
+                        ProdukItem(produk = produk, onTambah = { vm.tambahKeKeranjang(produk) })
+                    }
                 }
             }
         }
 
         Spacer(Modifier.height(12.dp))
 
-        // ── Keranjang Belanja ─────────────────────────────
+        // Keranjang Belanja
         SectionCard {
             Text(
                 "KERANJANG BELANJA",
-                fontSize   = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color      = TextSecondary,
+                fontSize      = 11.sp,
+                fontWeight    = FontWeight.SemiBold,
+                color         = TextSecondary,
                 letterSpacing = 0.8.sp
             )
             Spacer(Modifier.height(12.dp))
@@ -234,7 +231,7 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                 ) {
                     Text("Total", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     Text(
-                        formatRupiah(vm.totalBelanja),
+                        formatRupiah(totalBelanja),
                         fontWeight = FontWeight.Bold,
                         fontSize   = 20.sp,
                         color      = NavyPrimary
@@ -243,11 +240,10 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
             }
         }
 
-        // Tampilkan section pembayaran hanya jika keranjang ada isinya
         if (keranjang.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
 
-            // ── Pembayaran ─────────────────────────────────
+            // Pembayaran
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -260,15 +256,14 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                 Column {
                     Text(
                         "PEMBAYARAN",
-                        fontSize   = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = CardWhite,
+                        fontSize      = 11.sp,
+                        fontWeight    = FontWeight.Bold,
+                        color         = CardWhite,
                         letterSpacing = 1.sp
                     )
 
                     Spacer(Modifier.height(12.dp))
 
-                    // Pilih Kas
                     Text("Akun Kas Tujuan *", fontSize = 12.sp, color = CardWhite)
                     Spacer(Modifier.height(6.dp))
 
@@ -314,20 +309,26 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
 
                     Spacer(Modifier.height(12.dp))
 
-                    // Uang diterima
                     Text("UANG DITERIMA", fontSize = 11.sp, color = CardWhite, letterSpacing = 0.8.sp)
                     Spacer(Modifier.height(6.dp))
 
                     OutlinedTextField(
-                        value         = jumlahBayar,
-                        onValueChange = vm::onJumlahBayarChange,
-                        placeholder   = { Text("0", color = TextSecondary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
-                        modifier      = Modifier.fillMaxWidth(),
-                        singleLine    = true,
+                        value           = jumlahBayar,
+                        onValueChange   = vm::onJumlahBayarChange,
+                        placeholder     = {
+                            Text(
+                                "0",
+                                color     = TextSecondary,
+                                textAlign = TextAlign.Center,
+                                modifier  = Modifier.fillMaxWidth()
+                            )
+                        },
+                        modifier        = Modifier.fillMaxWidth(),
+                        singleLine      = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        textStyle     = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontSize = 18.sp),
-                        shape         = RoundedCornerShape(10.dp),
-                        colors        = OutlinedTextFieldDefaults.colors(
+                        textStyle       = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontSize = 18.sp),
+                        shape           = RoundedCornerShape(10.dp),
+                        colors          = OutlinedTextFieldDefaults.colors(
                             unfocusedBorderColor    = CardWhite,
                             focusedBorderColor      = YellowAccent,
                             unfocusedContainerColor = CardWhite,
@@ -335,12 +336,11 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                         )
                     )
 
-                    // Kembalian – tampil hanya jika jumlah bayar sudah diisi dan >= total
                     val bayarNum = jumlahBayar.toDoubleOrNull() ?: 0.0
-                    if (bayarNum >= vm.totalBelanja && jumlahBayar.isNotBlank()) {
+                    if (bayarNum >= totalBelanja && jumlahBayar.isNotBlank()) {
                         Spacer(Modifier.height(10.dp))
                         Row(
-                            modifier              = Modifier
+                            modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(CardWhite.copy(alpha = 0.15f))
@@ -349,7 +349,7 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                         ) {
                             Text("Kembalian", color = CardWhite, fontSize = 13.sp)
                             Text(
-                                formatRupiah(vm.kembalian),
+                                formatRupiah(kembalian),
                                 color      = YellowAccent,
                                 fontWeight = FontWeight.Bold,
                                 fontSize   = 14.sp
@@ -361,14 +361,12 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
 
                     val bisaSelesai = kasDipilih != null &&
                             jumlahBayar.isNotBlank() &&
-                            (jumlahBayar.toDoubleOrNull() ?: 0.0) >= vm.totalBelanja
+                            bayarNum >= totalBelanja
 
                     Button(
                         onClick  = vm::selesaikanTransaksi,
                         enabled  = bisaSelesai && uiState !is KasirUiState.Loading,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(54.dp),
+                        modifier = Modifier.fillMaxWidth().height(54.dp),
                         shape    = RoundedCornerShape(10.dp),
                         colors   = ButtonDefaults.buttonColors(
                             containerColor         = YellowAccent,
@@ -384,9 +382,9 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                         } else {
                             Text(
                                 "SELESAIKAN TRANSAKSI",
-                                color      = NavyPrimary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize   = 14.sp,
+                                color         = NavyPrimary,
+                                fontWeight    = FontWeight.Bold,
+                                fontSize      = 14.sp,
                                 letterSpacing = 1.sp
                             )
                         }
@@ -399,29 +397,24 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
     }
 }
 
-// ── Sub-composables ───────────────────────────────────────
+// Sub-composables
 
 @Composable
 private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
     Card(
-        modifier  = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         shape     = RoundedCornerShape(12.dp),
         colors    = CardDefaults.cardColors(containerColor = CardWhite),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            content  = content
-        )
+        Column(modifier = Modifier.padding(16.dp), content = content)
     }
 }
 
 @Composable
 private fun PelangganTerpilihCard(pelanggan: Pelanggan, onHapus: () -> Unit) {
     Row(
-        modifier = Modifier
+        modifier          = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(NavyPrimary)
@@ -429,10 +422,7 @@ private fun PelangganTerpilihCard(pelanggan: Pelanggan, onHapus: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier         = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(YellowAccent),
+            modifier         = Modifier.size(44.dp).clip(CircleShape).background(YellowAccent),
             contentAlignment = Alignment.Center
         ) {
             Icon(Icons.Default.Person, null, tint = NavyPrimary, modifier = Modifier.size(24.dp))
@@ -453,46 +443,26 @@ private fun PelangganTerpilihCard(pelanggan: Pelanggan, onHapus: () -> Unit) {
 @Composable
 private fun ProdukItem(produk: Produk, onTambah: () -> Unit) {
     Row(
-        modifier = Modifier
+        modifier          = Modifier
             .fillMaxWidth()
             .clickable(onClick = onTambah)
             .padding(vertical = 10.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier         = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(ProductIconBg),
+            modifier         = Modifier.size(48.dp).clip(RoundedCornerShape(10.dp)).background(ProductIconBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(Icons.Default.ShoppingBasket, null, tint = ProductIconTint, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                produk.nama,
-                fontWeight   = FontWeight.SemiBold,
-                fontSize     = 14.sp,
-                color        = TextPrimary,
-                maxLines     = 1,
-                overflow     = TextOverflow.Ellipsis
-            )
+            Text(produk.nama, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Spacer(Modifier.width(8.dp))
         Column(horizontalAlignment = Alignment.End) {
-            Text(
-                formatRupiah(produk.hargaJual),
-                fontWeight = FontWeight.Bold,
-                fontSize   = 14.sp,
-                color      = NavyPrimary
-            )
-            Text(
-                "Stok: ${produk.stok.toInt()}",
-                fontSize = 11.sp,
-                color    = StockTextColor,
-                fontWeight = FontWeight.Medium
-            )
+            Text(formatRupiah(produk.hargaJual), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = NavyPrimary)
+            Text("Stok: ${produk.stok.toInt()}", fontSize = 11.sp, color = StockTextColor, fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -505,70 +475,31 @@ private fun KeranjangItemRow(
     onHapus : () -> Unit,
 ) {
     Row(
-        modifier          = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
+        modifier          = Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                item.produk.nama,
-                fontWeight = FontWeight.SemiBold,
-                fontSize   = 13.sp,
-                color      = TextPrimary,
-                maxLines   = 1,
-                overflow   = TextOverflow.Ellipsis
-            )
-            Text(
-                "${formatRupiah(item.produk.hargaJual)} × ${item.quantity}",
-                fontSize = 11.sp,
-                color    = TextSecondary
-            )
+            Text(item.produk.nama, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("${formatRupiah(item.produk.hargaJual)} × ${item.quantity}", fontSize = 11.sp, color = TextSecondary)
         }
         Spacer(Modifier.width(8.dp))
-        // Tombol kurang
         Box(
-            modifier = Modifier
-                .size(30.dp)
-                .clip(CircleShape)
-                .background(ErrorRed.copy(alpha = 0.12f))
-                .clickable(onClick = onKurang),
+            modifier         = Modifier.size(30.dp).clip(CircleShape).background(ErrorRed.copy(alpha = 0.12f)).clickable(onClick = onKurang),
             contentAlignment = Alignment.Center
-        ) {
-            Icon(Icons.Default.Remove, null, tint = ErrorRed, modifier = Modifier.size(16.dp))
-        }
+        ) { Icon(Icons.Default.Remove, null, tint = ErrorRed, modifier = Modifier.size(16.dp)) }
         Spacer(Modifier.width(8.dp))
-        Text(
-            "${item.quantity}",
-            fontWeight = FontWeight.Bold,
-            fontSize   = 14.sp,
-            modifier   = Modifier.width(20.dp),
-            textAlign  = TextAlign.Center
-        )
+        Text("${item.quantity}", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.width(20.dp), textAlign = TextAlign.Center)
         Spacer(Modifier.width(8.dp))
-        // Tombol tambah
         Box(
-            modifier = Modifier
-                .size(30.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(ProductIconTint)
-                .clickable(onClick = onTambah),
+            modifier         = Modifier.size(30.dp).clip(RoundedCornerShape(6.dp)).background(ProductIconTint).clickable(onClick = onTambah),
             contentAlignment = Alignment.Center
-        ) {
-            Icon(Icons.Default.Add, null, tint = CardWhite, modifier = Modifier.size(16.dp))
-        }
+        ) { Icon(Icons.Default.Add, null, tint = CardWhite, modifier = Modifier.size(16.dp)) }
         Spacer(Modifier.width(8.dp))
-        // Tombol hapus
         IconButton(onClick = onHapus, modifier = Modifier.size(30.dp)) {
             Icon(Icons.Default.Delete, null, tint = ErrorRed, modifier = Modifier.size(18.dp))
         }
         Spacer(Modifier.width(4.dp))
-        Text(
-            formatRupiah(item.subTotal),
-            fontWeight = FontWeight.SemiBold,
-            fontSize   = 13.sp,
-            color      = NavyPrimary
-        )
+        Text(formatRupiah(item.subTotal), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = NavyPrimary)
     }
 }
 
@@ -580,9 +511,9 @@ private fun PelangganBottomSheet(
     onDismiss     : () -> Unit,
 ) {
     ModalBottomSheet(
-        onDismissRequest  = onDismiss,
-        containerColor    = CardWhite,
-        dragHandle        = {
+        onDismissRequest = onDismiss,
+        containerColor   = CardWhite,
+        dragHandle = {
             Box(
                 modifier = Modifier
                     .padding(top = 12.dp, bottom = 8.dp)
@@ -594,25 +525,20 @@ private fun PelangganBottomSheet(
         }
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text(
-                "Select Customer",
-                fontWeight = FontWeight.Bold,
-                fontSize   = 20.sp,
-                color      = TextPrimary
-            )
+            Text("Select Customer", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = TextPrimary)
             Spacer(Modifier.height(16.dp))
 
             if (pelangganList.isEmpty()) {
                 Text(
                     "Belum ada pelanggan",
-                    color    = TextSecondary,
-                    modifier = Modifier.padding(vertical = 20.dp).fillMaxWidth(),
+                    color     = TextSecondary,
+                    modifier  = Modifier.padding(vertical = 20.dp).fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
             } else {
                 pelangganList.forEach { p ->
                     Row(
-                        modifier = Modifier
+                        modifier          = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .background(BackgroundLight)
@@ -621,18 +547,10 @@ private fun PelangganBottomSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
-                            modifier         = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(NavyPrimary),
+                            modifier         = Modifier.size(44.dp).clip(CircleShape).background(NavyPrimary),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                p.nama.firstOrNull()?.uppercase() ?: "?",
-                                color      = CardWhite,
-                                fontWeight = FontWeight.Bold,
-                                fontSize   = 18.sp
-                            )
+                            Text(p.nama.firstOrNull()?.uppercase() ?: "?", color = CardWhite, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                         Spacer(Modifier.width(12.dp))
                         Column {
@@ -662,27 +580,14 @@ private fun TransaksiSuksesDialog(
         containerColor   = CardWhite,
         icon = {
             Box(
-                modifier         = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(SuccessGreen.copy(alpha = 0.12f)),
+                modifier         = Modifier.size(56.dp).clip(CircleShape).background(SuccessGreen.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    null,
-                    tint     = SuccessGreen,
-                    modifier = Modifier.size(36.dp)
-                )
+                Icon(Icons.Default.CheckCircle, null, tint = SuccessGreen, modifier = Modifier.size(36.dp))
             }
         },
         title = {
-            Text(
-                "Transaksi Berhasil!",
-                fontWeight = FontWeight.Bold,
-                textAlign  = TextAlign.Center,
-                modifier   = Modifier.fillMaxWidth()
-            )
+            Text("Transaksi Berhasil!", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
         },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -698,9 +603,7 @@ private fun TransaksiSuksesDialog(
                 modifier = Modifier.fillMaxWidth(),
                 shape    = RoundedCornerShape(10.dp),
                 colors   = ButtonDefaults.buttonColors(containerColor = NavyPrimary)
-            ) {
-                Text("Tutup")
-            }
+            ) { Text("Tutup") }
         }
     )
 }
