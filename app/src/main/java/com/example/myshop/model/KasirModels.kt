@@ -28,7 +28,7 @@ data class Kas(
     @SerialName("is_active") val isActive: Boolean = true,
 )
 
-// Item di keranjang belanja (bukan dari DB, hanya state lokal)
+// State lokal keranjang, tidak disimpan ke DB
 data class KeranjangItem(
     val produk: Produk,
     val quantity: Int,
@@ -36,17 +36,25 @@ data class KeranjangItem(
     val subTotal: Double get() = produk.hargaJual * quantity
 }
 
-// Payload yang dikirim ke tabel penjualan
+// Payload insert penjualan ketika ada pelanggan dipilih
 @Serializable
-data class PenjualanInsert(
-    @SerialName("pelanggan_id") val pelangganId: String? = null,
+data class PenjualanDenganPelangganInsert(
+    @SerialName("pelanggan_id") val pelangganId: String,
     @SerialName("kas_id") val kasId: String,
     val total: Double,
     @SerialName("jumlah_bayar") val jumlahBayar: Double,
     val kembalian: Double,
 )
 
-// Payload yang dikirim ke tabel penjualan_item
+// Payload insert penjualan tanpa pelanggan (kolom pelanggan_id tidak dikirim) agar Supabase tidak mengisi default auth.uid() yang tidak ada di tabel pelanggan
+@Serializable
+data class PenjualanTanpaPelangganInsert(
+    @SerialName("kas_id") val kasId: String,
+    val total: Double,
+    @SerialName("jumlah_bayar") val jumlahBayar: Double,
+    val kembalian: Double,
+)
+
 @Serializable
 data class PenjualanItemInsert(
     @SerialName("penjualan_id") val penjualanId: String,
@@ -56,7 +64,7 @@ data class PenjualanItemInsert(
     @SerialName("sub_total") val subTotal: Double,
 )
 
-// Response setelah insert penjualan (butuh id-nya)
+// Hanya butuh id setelah insert penjualan berhasil
 @Serializable
 data class PenjualanResponse(
     val id: String,
