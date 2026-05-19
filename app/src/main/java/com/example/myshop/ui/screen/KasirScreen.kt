@@ -30,6 +30,7 @@ import com.example.myshop.model.Kas
 import com.example.myshop.model.KeranjangItem
 import com.example.myshop.model.Pelanggan
 import com.example.myshop.model.Produk
+import com.example.myshop.model.RingkasanTransaksi
 import com.example.myshop.ui.theme.*
 import com.example.myshop.viewmodel.KasirUiState
 import com.example.myshop.viewmodel.KasirViewModel
@@ -55,7 +56,6 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
     val uiState            by vm.uiState.collectAsStateWithLifecycle()
     val isLoadingData      by vm.isLoadingData.collectAsStateWithLifecycle()
     val showPelangganSheet by vm.showPelangganSheet.collectAsStateWithLifecycle()
-    // Collect sebagai StateFlow agar selalu reactive
     val totalBelanja       by vm.totalBelanja.collectAsStateWithLifecycle()
     val kembalian          by vm.kembalian.collectAsStateWithLifecycle()
 
@@ -64,11 +64,11 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
         else produkList.filter { it.nama.contains(searchQuery, ignoreCase = true) }
     }
 
+    // Dialog sukses,  ringkasan dibawa dari dalam state sehingga tidak pernah Rp 0
     if (uiState is KasirUiState.Success) {
+        val ringkasan = (uiState as KasirUiState.Success).ringkasan
         TransaksiSuksesDialog(
-            total     = totalBelanja,
-            bayar     = jumlahBayar.toDoubleOrNull() ?: 0.0,
-            kembalian = kembalian,
+            ringkasan = ringkasan,
             onDismiss = { vm.resetUiState() }
         )
     }
@@ -76,7 +76,7 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
     if (uiState is KasirUiState.Error) {
         AlertDialog(
             onDismissRequest = { vm.resetUiState() },
-            title   = { Text("Gagal") },
+            title   = { Text("Perhatian") },
             text    = { Text((uiState as KasirUiState.Error).message) },
             confirmButton = {
                 TextButton(onClick = { vm.resetUiState() }) { Text("OK") }
@@ -100,13 +100,25 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
     ) {
         // Pelanggan
         SectionCard {
-            Text(
-                "PELANGGAN (OPSIONAL)",
-                fontSize      = 11.sp,
-                fontWeight    = FontWeight.SemiBold,
-                color         = TextSecondary,
-                letterSpacing = 0.8.sp
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "PELANGGAN",
+                    fontSize      = 11.sp,
+                    fontWeight    = FontWeight.SemiBold,
+                    color         = TextSecondary,
+                    letterSpacing = 0.8.sp,
+                    modifier      = Modifier.weight(1f)
+                )
+                // Badge wajib
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(ErrorRed.copy(alpha = 0.1f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text("Wajib", fontSize = 10.sp, color = ErrorRed, fontWeight = FontWeight.SemiBold)
+                }
+            }
             Spacer(Modifier.height(10.dp))
 
             if (pelangganDipilih == null) {
@@ -119,7 +131,7 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                         .padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("+ Select Customer", color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("+ Pilih Pelanggan", color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
             } else {
                 PelangganTerpilihCard(pelanggan = pelangganDipilih!!, onHapus = vm::hapusPelanggan)
@@ -164,7 +176,7 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                         CircularProgressIndicator(color = NavyPrimary, modifier = Modifier.size(28.dp))
                     }
                 }
-                produkFiltered.isEmpty() && !isLoadingData -> {
+                produkFiltered.isEmpty() -> {
                     Column(
                         modifier            = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -261,7 +273,6 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                         color         = CardWhite,
                         letterSpacing = 1.sp
                     )
-
                     Spacer(Modifier.height(12.dp))
 
                     Text("Akun Kas Tujuan *", fontSize = 12.sp, color = CardWhite)
@@ -316,12 +327,7 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                         value           = jumlahBayar,
                         onValueChange   = vm::onJumlahBayarChange,
                         placeholder     = {
-                            Text(
-                                "0",
-                                color     = TextSecondary,
-                                textAlign = TextAlign.Center,
-                                modifier  = Modifier.fillMaxWidth()
-                            )
+                            Text("0", color = TextSecondary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                         },
                         modifier        = Modifier.fillMaxWidth(),
                         singleLine      = true,
@@ -348,18 +354,14 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("Kembalian", color = CardWhite, fontSize = 13.sp)
-                            Text(
-                                formatRupiah(kembalian),
-                                color      = YellowAccent,
-                                fontWeight = FontWeight.Bold,
-                                fontSize   = 14.sp
-                            )
+                            Text(formatRupiah(kembalian), color = YellowAccent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
                     }
 
                     Spacer(Modifier.height(16.dp))
 
-                    val bisaSelesai = kasDipilih != null &&
+                    val bisaSelesai = pelangganDipilih != null &&
+                            kasDipilih != null &&
                             jumlahBayar.isNotBlank() &&
                             bayarNum >= totalBelanja
 
@@ -374,19 +376,9 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                         )
                     ) {
                         if (uiState is KasirUiState.Loading) {
-                            CircularProgressIndicator(
-                                color       = NavyPrimary,
-                                modifier    = Modifier.size(22.dp),
-                                strokeWidth = 2.5.dp
-                            )
+                            CircularProgressIndicator(color = NavyPrimary, modifier = Modifier.size(22.dp), strokeWidth = 2.5.dp)
                         } else {
-                            Text(
-                                "SELESAIKAN TRANSAKSI",
-                                color         = NavyPrimary,
-                                fontWeight    = FontWeight.Bold,
-                                fontSize      = 14.sp,
-                                letterSpacing = 1.sp
-                            )
+                            Text("SELESAIKAN TRANSAKSI", color = NavyPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 1.sp)
                         }
                     }
                 }
@@ -414,11 +406,7 @@ private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
 @Composable
 private fun PelangganTerpilihCard(pelanggan: Pelanggan, onHapus: () -> Unit) {
     Row(
-        modifier          = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(NavyPrimary)
-            .padding(12.dp),
+        modifier          = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(NavyPrimary).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -443,10 +431,7 @@ private fun PelangganTerpilihCard(pelanggan: Pelanggan, onHapus: () -> Unit) {
 @Composable
 private fun ProdukItem(produk: Produk, onTambah: () -> Unit) {
     Row(
-        modifier          = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onTambah)
-            .padding(vertical = 10.dp, horizontal = 4.dp),
+        modifier          = Modifier.fillMaxWidth().clickable(onClick = onTambah).padding(vertical = 10.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -517,24 +502,18 @@ private fun PelangganBottomSheet(
             Box(
                 modifier = Modifier
                     .padding(top = 12.dp, bottom = 8.dp)
-                    .width(40.dp)
-                    .height(4.dp)
+                    .width(40.dp).height(4.dp)
                     .clip(RoundedCornerShape(2.dp))
                     .background(BorderColor)
             )
         }
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Select Customer", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = TextPrimary)
+            Text("Pilih Pelanggan", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = TextPrimary)
             Spacer(Modifier.height(16.dp))
 
             if (pelangganList.isEmpty()) {
-                Text(
-                    "Belum ada pelanggan",
-                    color     = TextSecondary,
-                    modifier  = Modifier.padding(vertical = 20.dp).fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
+                Text("Belum ada pelanggan", color = TextSecondary, modifier = Modifier.padding(vertical = 20.dp).fillMaxWidth(), textAlign = TextAlign.Center)
             } else {
                 pelangganList.forEach { p ->
                     Row(
@@ -570,9 +549,7 @@ private fun PelangganBottomSheet(
 
 @Composable
 private fun TransaksiSuksesDialog(
-    total    : Double,
-    bayar    : Double,
-    kembalian: Double,
+    ringkasan: RingkasanTransaksi,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -591,10 +568,10 @@ private fun TransaksiSuksesDialog(
         },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                InfoBaris("Total", formatRupiah(total))
-                InfoBaris("Dibayar", formatRupiah(bayar))
+                InfoBaris("Total",     formatRupiah(ringkasan.total))
+                InfoBaris("Dibayar",   formatRupiah(ringkasan.bayar))
                 HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-                InfoBaris("Kembalian", formatRupiah(kembalian), warnaNilai = SuccessGreen)
+                InfoBaris("Kembalian", formatRupiah(ringkasan.kembalian), warnaNilai = SuccessGreen)
             }
         },
         confirmButton = {
