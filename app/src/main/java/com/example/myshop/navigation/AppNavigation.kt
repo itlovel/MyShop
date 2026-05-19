@@ -76,16 +76,9 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val showChrome   = currentRoute in bottomNavRoutes
 
-    // KasirViewModel di-hoist di sini agar tidak di-recreate setiap navigasi
-    val kasirViewModel: KasirViewModel = viewModel()
-
     Scaffold(
-        topBar = {
-            if (showChrome) TopBar(title = routeToTitle(currentRoute))
-        },
-        bottomBar = {
-            if (showChrome) BottomNavBar(navController = navController)
-        }
+        topBar    = { if (showChrome) TopBar(title = routeToTitle(currentRoute)) },
+        bottomBar = { if (showChrome) BottomNavBar(navController = navController) }
     ) { innerPadding ->
         NavHost(
             navController    = navController,
@@ -128,6 +121,9 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
             }
 
             composable(Screen.Kasir.route) {
+                // viewModel() di dalam composable() otomatis di-scope ke NavBackStackEntry
+                // ViewModel tetap hidup selama tab Kasir ada di back stack dan tidak di-recreate setiap kali pindah tab.
+                val kasirViewModel: KasirViewModel = viewModel()
                 KasirScreen(vm = kasirViewModel)
             }
 
