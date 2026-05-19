@@ -116,7 +116,7 @@ fun KasirScreen(vm: KasirViewModel = viewModel()) {
                         .background(ErrorRed.copy(alpha = 0.1f))
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
-                    Text("Wajib", fontSize = 10.sp, color = ErrorRed, fontWeight = FontWeight.SemiBold)
+                    Text("*", fontSize = 10.sp, color = ErrorRed, fontWeight = FontWeight.SemiBold)
                 }
             }
             Spacer(Modifier.height(10.dp))
