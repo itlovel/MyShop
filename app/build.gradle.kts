@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 
     // Plugin serialization dibutuhkan oleh Supabase Kotlin
-    kotlin("plugin.serialization") version "1.8.20"
+    kotlin("plugin.serialization") version "2.1.0"
 }
 
 android {

@@ -14,7 +14,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myshop.ui.produk.ProdukScreen
 import com.example.myshop.ui.theme.*
+import com.example.myshop.viewmodel.ProdukViewModel
 
 
 @Composable
@@ -27,11 +29,15 @@ fun KasScreen() {
 }
 
 @Composable
-fun StokScreen() {
-    PlaceholderScreen(
-        icon  = Icons.Default.Inventory,
-        title = "Stok",
-        desc  = "Modul Produk & Inventory\n(Kolaborasi Tim)"
+fun StokScreen(
+    vm: ProdukViewModel,
+    onTambahClick: () -> Unit,
+    onDetailClick: (String) -> Unit
+) {
+    ProdukScreen(
+        onTambahClick = onTambahClick,
+        onDetailClick = onDetailClick,
+        produkViewModel = vm
     )
 }
 
