@@ -36,19 +36,10 @@ data class KeranjangItem(
     val subTotal: Double get() = produk.hargaJual * quantity
 }
 
-// Payload insert penjualan ketika ada pelanggan dipilih
+// Pelanggan wajib, pelangganId tidak nullable
 @Serializable
-data class PenjualanDenganPelangganInsert(
+data class PenjualanInsert(
     @SerialName("pelanggan_id") val pelangganId: String,
-    @SerialName("kas_id") val kasId: String,
-    val total: Double,
-    @SerialName("jumlah_bayar") val jumlahBayar: Double,
-    val kembalian: Double,
-)
-
-// Payload insert penjualan tanpa pelanggan (kolom pelanggan_id tidak dikirim) agar Supabase tidak mengisi default auth.uid() yang tidak ada di tabel pelanggan
-@Serializable
-data class PenjualanTanpaPelangganInsert(
     @SerialName("kas_id") val kasId: String,
     val total: Double,
     @SerialName("jumlah_bayar") val jumlahBayar: Double,
@@ -64,8 +55,15 @@ data class PenjualanItemInsert(
     @SerialName("sub_total") val subTotal: Double,
 )
 
-// Hanya butuh id setelah insert penjualan berhasil
 @Serializable
 data class PenjualanResponse(
     val id: String,
 )
+
+// Snapshot ringkasan transaksi yang sudah selesai, disimpan terpisah agar nilai tidak hilang ketika ViewModel mereset keranjang
+data class RingkasanTransaksi(
+    val total    : Double,
+    val bayar    : Double,
+    val kembalian: Double,
+)
+
