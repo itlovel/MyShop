@@ -2,15 +2,7 @@ package com.example.myshop.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-
-@Serializable
-data class Produk(
-    val id: String = "",
-    val nama: String = "",
-    @SerialName("harga_jual") val hargaJual: Double = 0.0,
-    val stok: Double = 0.0,
-    @SerialName("is_active") val isActive: Boolean = true,
-)
+import com.example.myshop.model.Produk
 
 @Serializable
 data class Pelanggan(

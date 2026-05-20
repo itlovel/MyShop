@@ -2,10 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.serialization)
 
     // Plugin serialization dibutuhkan oleh Supabase Kotlin
-//    kotlin("plugin.serialization") version "1.8.20"
+    kotlin("plugin.serialization") version "2.1.0"
 }
 
 android {
@@ -35,10 +34,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-        }
+    kotlinOptions {
+        jvmTarget = "11"
     }
     buildFeatures {
         compose = true

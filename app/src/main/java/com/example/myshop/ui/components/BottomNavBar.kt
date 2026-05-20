@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.myshop.navigation.Screen
 import com.example.myshop.navigation.bottomNavItems
 import com.example.myshop.ui.theme.CardWhite
 import com.example.myshop.ui.theme.NavyPrimary
@@ -28,6 +29,12 @@ import com.example.myshop.ui.theme.YellowAccent
 fun BottomNavBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val stokRoutes = setOf(
+        Screen.Stok.route,
+        Screen.TambahProduk.route,
+        Screen.DetailProduk.route,
+        Screen.EditProduk.route,
+    )
 
     NavigationBar(
         containerColor = NavyPrimary,
@@ -35,7 +42,12 @@ fun BottomNavBar(navController: NavController) {
         modifier        = Modifier.height(85.dp)
     ) {
         bottomNavItems.forEach { item ->
-            val selected = currentRoute == item.screen.route
+            val selected =
+                if (item.screen == Screen.Stok) {
+                    currentRoute in stokRoutes
+                } else {
+                    currentRoute == item.screen.route
+                }
 
             NavigationBarItem(
                 selected = selected,
