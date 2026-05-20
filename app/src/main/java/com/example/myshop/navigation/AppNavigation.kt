@@ -145,15 +145,20 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
 
             composable(Screen.Kas.route)   {
                 val daftarKas by kasViewModel.daftarKas.collectAsStateWithLifecycle()
+                val uiState by kasViewModel.uiState.collectAsStateWithLifecycle()
+                val isLoadingData by kasViewModel.isLoadingData.collectAsStateWithLifecycle()
 
                 KasListScreen(
                     daftarKas = daftarKas,
+                    uiState = uiState,
+                    isLoadingData = isLoadingData,
                     onTambahKasClick = { navController.navigate(Screen.TambahKas.route) },
                     onDetailClick = { kas ->
                         kasViewModel.muatDetailKas(kas)
                         navController.navigate(Screen.DetailKas.route)
                     },
-                    onToggleStatus = kasViewModel::toggleStatusKas
+                    onToggleStatus = kasViewModel::toggleStatusKas,
+                    onRetryLoad = kasViewModel::muatDataKas
                 )
             }
 

@@ -18,13 +18,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.myshop.formatRupiah
 import com.example.myshop.model.KasModels
+import com.example.myshop.viewmodel.KasUiState
 
 @Composable
 fun KasListScreen(
     daftarKas: List<KasModels>,
+    uiState: KasUiState,
+    isLoadingData: Boolean,
     onTambahKasClick: () -> Unit = {},
     onDetailClick: (KasModels) -> Unit = {},
-    onToggleStatus: (KasModels) -> Unit = {}
+    onToggleStatus: (KasModels) -> Unit = {},
+    onRetryLoad: () -> Unit = {}
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background // Menggunakan F8F9FA
@@ -107,13 +111,74 @@ fun KasListScreen(
             }
 
             // --- LIST KARTU KAS ---
-            items(daftarKas) { kas ->
-                ItemKartuKas(
-                    kas = kas,
-                    onDetailClick = { onDetailClick(kas) },
-                    onToggleStatus = { onToggleStatus(kas) }
-                )
-                Spacer(modifier = Modifier.height(12.dp))
+            when {
+                isLoadingData -> {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+
+                uiState is KasUiState.Error -> {
+                    val errorMessage = uiState.message
+                    item {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.error.copy(alpha = 0.25f)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = errorMessage,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                TextButton(onClick = onRetryLoad) {
+                                    Text("Muat ulang")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                daftarKas.isEmpty() -> {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Belum ada akun kas", color = Color.Gray)
+                        }
+                    }
+                }
+
+                else -> {
+                    items(daftarKas) { kas ->
+                        ItemKartuKas(
+                            kas = kas,
+                            onDetailClick = { onDetailClick(kas) },
+                            onToggleStatus = { onToggleStatus(kas) }
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
             }
         }
     }

@@ -11,6 +11,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+sealed class KasUiState {
+    object Idle : KasUiState()
+    object Loading : KasUiState()
+    object Success : KasUiState()
+    data class Error(val message: String) : KasUiState()
+}
 private const val TAG = "KasViewModel"
 
 class KasViewModel : ViewModel() {
@@ -22,6 +28,10 @@ class KasViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow<KasUiState>(KasUiState.Idle)
     val uiState: StateFlow<KasUiState> = _uiState.asStateFlow()
+
+    // Loading khusus untuk fetch data awal, mengikuti pola KasirViewModel.
+    private val _isLoadingData = MutableStateFlow(false)
+    val isLoadingData: StateFlow<Boolean> = _isLoadingData.asStateFlow()
 
     private val _namaKas = MutableStateFlow("")
     val namaKas: StateFlow<String> = _namaKas.asStateFlow()
@@ -69,12 +79,14 @@ class KasViewModel : ViewModel() {
     // Fungsi untuk mengambil data dari repository (untuk UI)
     fun muatDataKas() {
         viewModelScope.launch {
-            _uiState.value = KasUiState.Loading
+            _isLoadingData.value = true
             try {
                 fetchDataAndSort()
                 _uiState.value = KasUiState.Idle
             } catch (e: Exception) {
                 _uiState.value = KasUiState.Error(e.message ?: "Gagal mengambil data")
+            } finally {
+                _isLoadingData.value = false
             }
         }
     }
