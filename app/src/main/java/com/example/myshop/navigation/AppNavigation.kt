@@ -39,14 +39,6 @@ private val bottomNavRoutes = setOf(
 
 
 private fun routeToTitle(route: String?): String = when (route) {
-    Screen.Beranda.route -> "Beranda"
-    Screen.Kasir.route   -> "Kasir - Transaksi Penjualan"
-    Screen.Kas.route     -> "Manajemen Kas"
-    Screen.TambahKas.route -> "Buat Akun Kas"
-    Screen.DetailKas.route -> "Detail Kas"
-    Screen.Stok.route    -> "Stok Produk"
-    Screen.Biaya.route   -> "Biaya Operasional"
-    else                 -> "Toko-I"
     Screen.Beranda.route      -> "Beranda"
     Screen.Kasir.route        -> "Kasir - Transaksi Penjualan"
     Screen.Kas.route          -> "Manajemen Kas"
@@ -164,6 +156,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                     onToggleStatus = kasViewModel::toggleStatusKas
                 )
             }
+
             composable(Screen.TambahKas.route) {
                 val uiState by kasViewModel.uiState.collectAsStateWithLifecycle()
                 val namaKas by kasViewModel.namaKas.collectAsStateWithLifecycle()
@@ -201,9 +194,6 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                     }
                 )
             }
-            composable(Screen.Stok.route)  { StokScreen() }
-            composable(Screen.Kas.route)   { KasScreen() }
-
             composable(Screen.Stok.route) {
                 StokScreen(
                     vm = produkViewModel,
