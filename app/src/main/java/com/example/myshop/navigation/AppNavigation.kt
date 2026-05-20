@@ -19,10 +19,8 @@ import com.example.myshop.ui.components.BottomNavBar
 import com.example.myshop.ui.components.TopBar
 import com.example.myshop.ui.screen.*
 import com.example.myshop.ui.theme.NavyPrimary
-import com.example.myshop.viewmodel.AuthCheckState
-import com.example.myshop.viewmodel.AuthUiState
-import com.example.myshop.viewmodel.AuthViewModel
-import com.example.myshop.viewmodel.KasirViewModel
+import com.example.myshop.viewmodel.*
+import androidx.compose.runtime.getValue
 
 private val bottomNavRoutes = setOf(
     Screen.Beranda.route,
@@ -36,6 +34,8 @@ private fun routeToTitle(route: String?): String = when (route) {
     Screen.Beranda.route -> "Beranda"
     Screen.Kasir.route   -> "Kasir - Transaksi Penjualan"
     Screen.Kas.route     -> "Manajemen Kas"
+    Screen.TambahKas.route -> "Buat Akun Kas"
+    Screen.DetailKas.route -> "Detail Kas"
     Screen.Stok.route    -> "Stok Produk"
     Screen.Biaya.route   -> "Biaya Operasional"
     else                 -> "Toko-I"
@@ -63,6 +63,9 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
     val email    = authViewModel.email.collectAsStateWithLifecycle()
     val password = authViewModel.password.collectAsStateWithLifecycle()
     val uiState  = authViewModel.uiState.collectAsStateWithLifecycle()
+
+    // ViewModel yang di-share antara List Kas dan Tambah Kas
+    val kasViewModel: KasViewModel = viewModel()
 
     LaunchedEffect(uiState.value) {
         if (uiState.value is AuthUiState.Success) {
@@ -127,7 +130,56 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 KasirScreen(vm = kasirViewModel)
             }
 
-            composable(Screen.Kas.route)   { KasScreen() }
+            composable(Screen.Kas.route)   {
+                val daftarKas by kasViewModel.daftarKas.collectAsStateWithLifecycle()
+
+                KasListScreen(
+                    daftarKas = daftarKas,
+                    onTambahKasClick = { navController.navigate(Screen.TambahKas.route) },
+                    onDetailClick = { kas ->
+                        kasViewModel.muatDetailKas(kas)
+                        navController.navigate(Screen.DetailKas.route)
+                    },
+                    onToggleStatus = kasViewModel::toggleStatusKas
+                )
+            }
+            composable(Screen.TambahKas.route) {
+                val uiState by kasViewModel.uiState.collectAsStateWithLifecycle()
+                val namaKas by kasViewModel.namaKas.collectAsStateWithLifecycle()
+                val saldoAwal by kasViewModel.saldoAwal.collectAsStateWithLifecycle()
+
+                LaunchedEffect(uiState) {
+                    if (uiState is KasUiState.Success) {
+                        navController.popBackStack()
+                        kasViewModel.resetState()
+                    }
+                }
+
+                TambahKasScreen(
+                    namaKas = namaKas,
+                    saldoAwal = saldoAwal,
+                    uiState = uiState,
+                    onNamaKasChange = kasViewModel::onNamaKasChange,
+                    onSaldoAwalChange = kasViewModel::onSaldoAwalChange,
+                    onSimpanClick = kasViewModel::tambahKas,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.DetailKas.route) {
+                val kasTerpilih by kasViewModel.kasTerpilih.collectAsStateWithLifecycle()
+                val logKas by kasViewModel.logKas.collectAsStateWithLifecycle()
+                val uiState by kasViewModel.uiState.collectAsStateWithLifecycle()
+
+                KasLogScreen(
+                    kas = kasTerpilih,
+                    logs = logKas,
+                    uiState = uiState,
+                    onNavigateBack = { navController.popBackStack() },
+                    onManualTransactionClick = {
+                        // TODO: Sambungkan ke layar transaksi kas manual saat fiturnya dibuat.
+                    }
+                )
+            }
             composable(Screen.Stok.route)  { StokScreen() }
             composable(Screen.Biaya.route) { BiayaScreen() }
         }

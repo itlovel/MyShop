@@ -13,7 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.myshop.ui.theme.MyShopTheme
 import androidx.activity.compose.setContent
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.example.myshop.navigation.AppNavigation
+import com.example.myshop.ui.theme.NavyPrimary
 
 class MainActivity : ComponentActivity() {
 

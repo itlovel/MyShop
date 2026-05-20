@@ -16,16 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myshop.ui.theme.*
 
-
-@Composable
-fun KasScreen() {
-    PlaceholderScreen(
-        icon  = Icons.Default.AccountBalanceWallet,
-        title = "Kas",
-        desc  = "Modul Manajemen Kas\n(Anggota A)"
-    )
-}
-
 @Composable
 fun StokScreen() {
     PlaceholderScreen(

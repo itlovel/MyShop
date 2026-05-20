@@ -3,6 +3,7 @@ package com.example.myshop.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.*
@@ -76,5 +77,43 @@ fun TopBar(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun DetailTopBar(
+    title: String,
+    onBackClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .background(NavyPrimary)
+            .height(56.dp)
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+
+        // Back button
+        IconButton(onClick = onBackClick) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = CardWhite
+            )
+        }
+
+        // Title center
+        Text(
+            text = title,
+            color = CardWhite,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        // Dummy space biar title tetap center
+        Spacer(modifier = Modifier.width(48.dp))
     }
 }
