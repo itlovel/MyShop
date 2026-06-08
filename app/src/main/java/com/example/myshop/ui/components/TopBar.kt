@@ -4,32 +4,32 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myshop.ui.theme.CardWhite
 import com.example.myshop.ui.theme.NavyPrimary
-import com.example.myshop.ui.theme.NotifBadge
 
 /**
  * TopBar:
- * - Kiri  : hamburger menu
- * - Tengah: judul halaman
- * - Kanan : ikon notifikasi dengan badge kuning
+ * - Kiri   : hamburger menu (di tab utama) atau back arrow (di ProfileScreen)
+ * - Tengah : judul halaman
+ * - Kanan  : ikon profil
  */
 @Composable
 fun TopBar(
-    title           : String,
-    onMenuClick     : () -> Unit = {},
-    onNotifClick    : () -> Unit = {},
-    hasNotification : Boolean    = true
+    title          : String,
+    showBackButton : Boolean  = false,
+    onBackClick    : () -> Unit = {},
+    onMenuClick    : () -> Unit = {},
+    onProfileClick : () -> Unit = {},   // kosong = ikon ditampilkan tapi tidak aktif (ProfileScreen)
+    showProfileIcon: Boolean   = true,
 ) {
     Row(
         modifier = Modifier
@@ -41,16 +41,26 @@ fun TopBar(
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Hamburger menu
-        IconButton(onClick = onMenuClick) {
-            Icon(
-                imageVector        = Icons.Default.Menu,
-                contentDescription = "Menu",
-                tint               = CardWhite
-            )
+        // Kiri: back button (ProfileScreen) atau hamburger (tab utama)
+        if (showBackButton) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector        = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Kembali",
+                    tint               = CardWhite
+                )
+            }
+        } else {
+            IconButton(onClick = onMenuClick) {
+                Icon(
+                    imageVector        = Icons.Default.Menu,
+                    contentDescription = "Menu",
+                    tint               = CardWhite
+                )
+            }
         }
 
-        // Judul
+        // Tengah: judul
         Text(
             text       = title,
             color      = CardWhite,
@@ -58,31 +68,28 @@ fun TopBar(
             fontWeight = FontWeight.SemiBold
         )
 
-        // Notifikasi + badge
-        Box {
-            IconButton(onClick = onNotifClick) {
+        // Kanan: ikon profil
+        if (showProfileIcon) {
+            IconButton(onClick = onProfileClick) {
                 Icon(
-                    imageVector        = Icons.Default.NotificationsNone,
-                    contentDescription = "Notifikasi",
+                    imageVector        = Icons.Default.AccountCircle,
+                    contentDescription = "Profil",
                     tint               = CardWhite
                 )
             }
-            if (hasNotification) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .background(NotifBadge, shape = androidx.compose.foundation.shape.CircleShape)
-                        .align(Alignment.TopEnd)
-                        .offset(x = (-10).dp, y = 10.dp)
-                )
-            }
+        } else {
+            // Spacer agar judul tetap di tengah
+            Spacer(modifier = Modifier.width(48.dp))
         }
     }
 }
 
+/**
+ * DetailTopBar — dipakai di screen detail yang mengelola TopBar sendiri
+ */
 @Composable
 fun DetailTopBar(
-    title: String,
+    title      : String,
     onBackClick: () -> Unit
 ) {
     Row(
@@ -92,28 +99,24 @@ fun DetailTopBar(
             .background(NavyPrimary)
             .height(56.dp)
             .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-
-        // Back button
         IconButton(onClick = onBackClick) {
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                tint = CardWhite
+                imageVector        = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Kembali",
+                tint               = CardWhite
             )
         }
 
-        // Title center
         Text(
-            text = title,
-            color = CardWhite,
-            fontSize = 18.sp,
+            text       = title,
+            color      = CardWhite,
+            fontSize   = 18.sp,
             fontWeight = FontWeight.SemiBold
         )
 
-        // Dummy space biar title tetap center
         Spacer(modifier = Modifier.width(48.dp))
     }
 }
