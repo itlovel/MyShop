@@ -50,6 +50,6 @@ data class UserProfileInsert(
     @SerialName("id")        val id: String,
     @SerialName("full_name") val fullName: String,
     // Gunakan Role.CASHIER agar nilai yang disimpan ke DB konsisten
-    @SerialName("role")      val role: String = Role.CASHIER,
-    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("role")      val role: String,
+    @SerialName("is_active") val isActive: Boolean,
 )

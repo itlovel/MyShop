@@ -68,7 +68,7 @@ class ProfileRepository {
             UserProfileInsert(
                 id       = uid,
                 fullName = fullName,
-                role     = Role.CASHIER,  // nilai yang cocok dengan DB
+                role     = "cashier",
                 isActive = true,
             )
         )
