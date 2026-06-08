@@ -3,22 +3,34 @@ package com.example.myshop.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Mapping ke tabel `profiles` di Supabase
+ */
+object Role {
+    const val ADMIN   = "admin"
+    const val CASHIER = "cashier"
+}
+
 @Serializable
 data class UserProfile(
     @SerialName("id")         val id: String = "",
     @SerialName("full_name")  val fullName: String = "",
-    @SerialName("role")       val role: String = "kasir",
+    @SerialName("role")       val role: String = Role.CASHIER,
     @SerialName("is_active")  val isActive: Boolean = true,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
 ) {
-    val isAdmin: Boolean get() = role == "admin"
-    val roleLabel: String get() = if (isAdmin) "Admin" else "Kasir"
+    val isAdmin: Boolean get() = role == Role.ADMIN
+    // Label yang ditampilkan di UI — bebas pakai bahasa Indonesia
+    val roleLabel: String get() = when (role) {
+        Role.ADMIN   -> "Admin"
+        Role.CASHIER -> "Kasir"
+        else         -> role
+    }
 }
 
 /**
- * UserProfile yang sudah dilengkapi email dari Auth session.
- * Dipakai di ViewModel dan UI dan bukan hasil decode langsung dari DB
+ * UserProfile yang sudah dilengkapi email dari Auth session
  */
 data class UserProfileWithEmail(
     val profile: UserProfile,
@@ -32,11 +44,12 @@ data class UserProfileWithEmail(
     val roleLabel : String  get() = profile.roleLabel
 }
 
-/** Payload insert profil kasir baru (kolom yang dikirim ke DB) */
+/** Payload insert profil kasir baru */
 @Serializable
 data class UserProfileInsert(
     @SerialName("id")        val id: String,
     @SerialName("full_name") val fullName: String,
-    @SerialName("role")      val role: String = "kasir",
+    // Gunakan Role.CASHIER agar nilai yang disimpan ke DB konsisten
+    @SerialName("role")      val role: String = Role.CASHIER,
     @SerialName("is_active") val isActive: Boolean = true,
 )
