@@ -1,7 +1,6 @@
 package com.example.myshop.ui.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -24,31 +23,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.myshop.model.UserProfile
+import com.example.myshop.model.UserProfileWithEmail
 import com.example.myshop.ui.theme.*
 import com.example.myshop.viewmodel.ProfileUiState
 import com.example.myshop.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
-    vm          : ProfileViewModel = viewModel(),
-    onLogout    : () -> Unit,
+    vm            : ProfileViewModel = viewModel(),
+    onLogout      : () -> Unit,
     onNavigateBack: () -> Unit,
 ) {
-    val profilSaya    by vm.profilSaya.collectAsStateWithLifecycle()
-    val daftarProfil  by vm.daftarProfil.collectAsStateWithLifecycle()
-    val uiState       by vm.uiState.collectAsStateWithLifecycle()
-    val profilDiedit  by vm.profilDiedit.collectAsStateWithLifecycle()
+    val profilSaya   by vm.profilSaya.collectAsStateWithLifecycle()
+    val daftarProfil by vm.daftarProfil.collectAsStateWithLifecycle()
+    val uiState      by vm.uiState.collectAsStateWithLifecycle()
+    val profilDiedit by vm.profilDiedit.collectAsStateWithLifecycle()
 
-    // Dialog tambah kasir (hanya untuk admin)
     var showTambahKasir by remember { mutableStateOf(false) }
 
-    // Dialog edit nama
     if (profilDiedit != null) {
         EditNamaDialog(
-            vm          = vm,
+            vm           = vm,
             targetProfil = profilDiedit!!,
-            onDismiss   = vm::batalEditProfil,
+            onDismiss    = vm::batalEditProfil,
         )
     }
 
@@ -56,26 +53,17 @@ fun ProfileScreen(
         TambahKasirDialog(
             vm        = vm,
             uiState   = uiState,
-            onDismiss = {
-                showTambahKasir = false
-                vm.resetUiState()
-            },
-            onSuccess = {
-                showTambahKasir = false
-                vm.resetUiState()
-            }
+            onDismiss = { showTambahKasir = false; vm.resetUiState() },
+            onSuccess = { showTambahKasir = false; vm.resetUiState() },
         )
     }
 
-    // Snackbar untuk error ringan
     if (uiState is ProfileUiState.Error && profilDiedit == null && !showTambahKasir) {
         AlertDialog(
             onDismissRequest = vm::resetUiState,
             title   = { Text("Gagal") },
             text    = { Text((uiState as ProfileUiState.Error).message) },
-            confirmButton = {
-                TextButton(onClick = vm::resetUiState) { Text("OK") }
-            }
+            confirmButton = { TextButton(onClick = vm::resetUiState) { Text("OK") } }
         )
     }
 
@@ -85,18 +73,18 @@ fun ProfileScreen(
             .background(BackgroundLight)
             .verticalScroll(rememberScrollState())
     ) {
-        // Header banner
+        // Header banner navy
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(NavyPrimary)
-                .padding(horizontal = 20.dp, vertical = 24.dp)
+                .padding(horizontal = 20.dp, vertical = 28.dp)
         ) {
             Column(
                 modifier            = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Avatar inisial
+                // Avatar inisial dari full_name
                 Box(
                     modifier         = Modifier
                         .size(72.dp)
@@ -105,39 +93,44 @@ fun ProfileScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text       = profilSaya?.nama?.firstOrNull()?.uppercase() ?: "?",
+                        text       = profilSaya?.fullName?.firstOrNull()?.uppercase() ?: "?",
                         fontSize   = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color      = NavyPrimary
                     )
                 }
+
                 Spacer(Modifier.height(12.dp))
 
                 if (uiState is ProfileUiState.Loading && profilSaya == null) {
-                    CircularProgressIndicator(color = CardWhite, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(
+                        color       = CardWhite,
+                        modifier    = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
                 } else {
                     Text(
-                        text       = profilSaya?.nama?.ifBlank { "Belum ada nama" } ?: "Memuat...",
+                        text       = profilSaya?.fullName?.ifBlank { "Belum ada nama" } ?: "Memuat...",
                         color      = CardWhite,
                         fontSize   = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(4.dp))
+                    // Email dari auth session
                     Text(
-                        text     = profilSaya?.email ?: "",
+                        text     = profilSaya?.email?.ifBlank { "" } ?: "",
                         color    = CardWhite.copy(alpha = 0.75f),
                         fontSize = 13.sp
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(10.dp))
+
                     // Badge role
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
                             .background(
-                                if (profilSaya?.isAdmin == true)
-                                    YellowAccent.copy(alpha = 0.95f)
-                                else
-                                    CardWhite.copy(alpha = 0.2f)
+                                if (profilSaya?.isAdmin == true) YellowAccent
+                                else CardWhite.copy(alpha = 0.2f)
                             )
                             .padding(horizontal = 14.dp, vertical = 4.dp)
                     ) {
@@ -145,7 +138,7 @@ fun ProfileScreen(
                             text       = profilSaya?.roleLabel ?: "",
                             color      = if (profilSaya?.isAdmin == true) NavyPrimary else CardWhite,
                             fontSize   = 12.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -154,9 +147,9 @@ fun ProfileScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // Tombol edit nama sendiri
+        // Informasi akun
         profilSaya?.let { profil ->
-            InfoCard {
+            ProfileCard {
                 Text(
                     "INFORMASI AKUN",
                     fontSize      = 11.sp,
@@ -166,14 +159,16 @@ fun ProfileScreen(
                 )
                 Spacer(Modifier.height(12.dp))
 
-                InfoBaris(label = "Nama",  nilai = profil.nama.ifBlank { "-" })
-                InfoBaris(label = "Email", nilai = profil.email)
-                InfoBaris(label = "Role",  nilai = profil.roleLabel)
+                // fullName dari tabel profiles (kolom full_name)
+                InfoBaris("Nama",  profil.fullName.ifBlank { "-" })
+                // email dari auth session
+                InfoBaris("Email", profil.email.ifBlank { "-" })
+                InfoBaris("Role",  profil.roleLabel)
 
                 Spacer(Modifier.height(14.dp))
 
                 OutlinedButton(
-                    onClick = { vm.mulaiEditProfil(profil) },
+                    onClick  = { vm.mulaiEditProfil(profil) },
                     modifier = Modifier.fillMaxWidth(),
                     shape    = RoundedCornerShape(8.dp),
                     colors   = ButtonDefaults.outlinedButtonColors(contentColor = NavyPrimary),
@@ -186,11 +181,11 @@ fun ProfileScreen(
             }
         }
 
-        // Seksi admin (manajemen pengguna)
+        // Manajemen pengguna (hanya admin)
         if (profilSaya?.isAdmin == true) {
             Spacer(Modifier.height(12.dp))
 
-            InfoCard {
+            ProfileCard {
                 Row(
                     modifier              = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -204,7 +199,7 @@ fun ProfileScreen(
                         letterSpacing = 0.8.sp
                     )
                     TextButton(
-                        onClick = vm::muatDaftarProfil,
+                        onClick        = vm::muatDaftarProfil,
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                     ) {
                         Icon(Icons.Default.Refresh, null, modifier = Modifier.size(14.dp), tint = NavyPrimary)
@@ -215,28 +210,32 @@ fun ProfileScreen(
 
                 Spacer(Modifier.height(12.dp))
 
-                if (uiState is ProfileUiState.Loading && daftarProfil.isEmpty()) {
-                    Box(
-                        modifier         = Modifier.fillMaxWidth().padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = NavyPrimary, modifier = Modifier.size(24.dp))
+                when {
+                    uiState is ProfileUiState.Loading && daftarProfil.isEmpty() -> {
+                        Box(
+                            modifier         = Modifier.fillMaxWidth().padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = NavyPrimary, modifier = Modifier.size(24.dp))
+                        }
                     }
-                } else if (daftarProfil.isEmpty()) {
-                    Text(
-                        "Belum ada pengguna",
-                        color    = TextSecondary,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        textAlign = TextAlign.Center
-                    )
-                } else {
-                    daftarProfil.forEach { profil ->
-                        PenggunaBaris(
-                            profil  = profil,
-                            onEdit  = { vm.mulaiEditProfil(profil) }
+                    daftarProfil.isEmpty() -> {
+                        Text(
+                            "Belum ada pengguna",
+                            color     = TextSecondary,
+                            modifier  = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            textAlign = TextAlign.Center
                         )
-                        if (profil != daftarProfil.last()) {
-                            HorizontalDivider(color = BorderColor, thickness = 0.5.dp)
+                    }
+                    else -> {
+                        daftarProfil.forEach { profil ->
+                            PenggunaBaris(
+                                profil = profil,
+                                onEdit = { vm.mulaiEditProfil(profil) }
+                            )
+                            if (profil != daftarProfil.last()) {
+                                HorizontalDivider(color = BorderColor, thickness = 0.5.dp)
+                            }
                         }
                     }
                 }
@@ -251,15 +250,15 @@ fun ProfileScreen(
                 ) {
                     Icon(Icons.Default.PersonAdd, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Tambah Kasir")
+                    Text("Tambah Kasir", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
 
         Spacer(Modifier.height(12.dp))
 
-        // Tombol logout
-        InfoCard {
+        // Logout
+        ProfileCard {
             OutlinedButton(
                 onClick  = onLogout,
                 modifier = Modifier.fillMaxWidth(),
@@ -280,7 +279,7 @@ fun ProfileScreen(
 // Sub-composables
 
 @Composable
-private fun InfoCard(content: @Composable ColumnScope.() -> Unit) {
+private fun ProfileCard(content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         shape     = RoundedCornerShape(12.dp),
@@ -304,12 +303,12 @@ private fun InfoBaris(label: String, nilai: String) {
 }
 
 @Composable
-private fun PenggunaBaris(profil: UserProfile, onEdit: () -> Unit) {
+private fun PenggunaBaris(profil: UserProfileWithEmail, onEdit: () -> Unit) {
     Row(
         modifier          = Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Avatar inisial
+        // Inisial dari full_name
         Box(
             modifier         = Modifier
                 .size(40.dp)
@@ -318,7 +317,7 @@ private fun PenggunaBaris(profil: UserProfile, onEdit: () -> Unit) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text       = profil.nama.firstOrNull()?.uppercase() ?: "?",
+                text       = profil.fullName.firstOrNull()?.uppercase() ?: "?",
                 color      = if (profil.isAdmin) CardWhite else ProductIconTint,
                 fontWeight = FontWeight.Bold,
                 fontSize   = 16.sp
@@ -327,20 +326,21 @@ private fun PenggunaBaris(profil: UserProfile, onEdit: () -> Unit) {
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                profil.nama.ifBlank { "(belum ada nama)" },
+                profil.fullName.ifBlank { "(belum ada nama)" },
                 fontWeight = FontWeight.SemiBold,
                 fontSize   = 14.sp,
                 color      = TextPrimary
             )
-            Text(profil.email, fontSize = 11.sp, color = TextSecondary)
+            // Email tidak tersedia untuk user lain (tidak ada di tabel profiles)
+            // Hanya tampil jika ada isinya (misal untuk profil sendiri)
+            if (profil.email.isNotBlank()) {
+                Text(profil.email, fontSize = 11.sp, color = TextSecondary)
+            }
         }
-        // Badge role
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(12.dp))
-                .background(
-                    if (profil.isAdmin) NavyPrimary.copy(alpha = 0.1f) else ProductIconBg
-                )
+                .background(if (profil.isAdmin) NavyPrimary.copy(alpha = 0.1f) else ProductIconBg)
                 .padding(horizontal = 8.dp, vertical = 3.dp)
         ) {
             Text(
@@ -360,13 +360,12 @@ private fun PenggunaBaris(profil: UserProfile, onEdit: () -> Unit) {
 @Composable
 private fun EditNamaDialog(
     vm           : ProfileViewModel,
-    targetProfil : UserProfile,
+    targetProfil : UserProfileWithEmail,
     onDismiss    : () -> Unit,
 ) {
     val formNamaEdit by vm.formNamaEdit.collectAsStateWithLifecycle()
     val uiState      by vm.uiState.collectAsStateWithLifecycle()
 
-    // Tutup dialog otomatis jika sukses
     LaunchedEffect(uiState) {
         if (uiState is ProfileUiState.Success) {
             vm.resetUiState()
@@ -377,21 +376,13 @@ private fun EditNamaDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor   = CardWhite,
-        title = {
-            Text(
-                "Edit Nama",
-                fontWeight = FontWeight.Bold,
-                color      = TextPrimary
-            )
-        },
+        title = { Text("Edit Nama", fontWeight = FontWeight.Bold, color = TextPrimary) },
         text = {
             Column {
-                Text(
-                    "Email: ${targetProfil.email}",
-                    fontSize = 12.sp,
-                    color    = TextSecondary
-                )
-                Spacer(Modifier.height(12.dp))
+                if (targetProfil.email.isNotBlank()) {
+                    Text("Email: ${targetProfil.email}", fontSize = 12.sp, color = TextSecondary)
+                    Spacer(Modifier.height(12.dp))
+                }
                 OutlinedTextField(
                     value         = formNamaEdit,
                     onValueChange = vm::onFormNamaEditChange,
@@ -406,11 +397,7 @@ private fun EditNamaDialog(
                 )
                 if (uiState is ProfileUiState.Error) {
                     Spacer(Modifier.height(6.dp))
-                    Text(
-                        (uiState as ProfileUiState.Error).message,
-                        color    = ErrorRed,
-                        fontSize = 12.sp
-                    )
+                    Text((uiState as ProfileUiState.Error).message, color = ErrorRed, fontSize = 12.sp)
                 }
             }
         },
@@ -422,11 +409,7 @@ private fun EditNamaDialog(
                 colors   = ButtonDefaults.buttonColors(containerColor = NavyPrimary)
             ) {
                 if (uiState is ProfileUiState.Loading) {
-                    CircularProgressIndicator(
-                        color       = CardWhite,
-                        modifier    = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
+                    CircularProgressIndicator(color = CardWhite, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                 } else {
                     Text("Simpan")
                 }
@@ -457,9 +440,7 @@ private fun TambahKasirDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor   = CardWhite,
-        title = {
-            Text("Tambah Kasir", fontWeight = FontWeight.Bold, color = TextPrimary)
-        },
+        title = { Text("Tambah Kasir", fontWeight = FontWeight.Bold, color = TextPrimary) },
         text = {
             Column {
                 OutlinedTextField(
@@ -494,15 +475,14 @@ private fun TambahKasirDialog(
                 )
                 Spacer(Modifier.height(10.dp))
                 OutlinedTextField(
-                    value         = formPassword,
-                    onValueChange = vm::onFormPasswordChange,
-                    label         = { Text("Password") },
-                    leadingIcon   = { Icon(Icons.Default.Lock, null) },
-                    trailingIcon  = {
+                    value                = formPassword,
+                    onValueChange        = vm::onFormPasswordChange,
+                    label                = { Text("Password") },
+                    leadingIcon          = { Icon(Icons.Default.Lock, null) },
+                    trailingIcon         = {
                         IconButton(onClick = { showPassword = !showPassword }) {
                             Icon(
-                                if (showPassword) Icons.Default.VisibilityOff
-                                else Icons.Default.Visibility,
+                                if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 null
                             )
                         }
@@ -532,11 +512,7 @@ private fun TambahKasirDialog(
                 colors   = ButtonDefaults.buttonColors(containerColor = NavyPrimary)
             ) {
                 if (uiState is ProfileUiState.Loading) {
-                    CircularProgressIndicator(
-                        color       = CardWhite,
-                        modifier    = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
+                    CircularProgressIndicator(color = CardWhite, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                 } else {
                     Text("Tambah")
                 }
