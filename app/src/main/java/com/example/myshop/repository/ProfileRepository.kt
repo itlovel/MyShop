@@ -57,23 +57,21 @@ class ProfileRepository {
 
     /** Daftarkan kasir baru ke Auth lalu insert profil dengan role 'cashier' */
     suspend fun tambahKasir(fullName: String, email: String, password: String) {
+        // Register ke Supabase Auth — trigger handle_new_user otomatis insert ke tabel profiles dengan role 'cashier'
         val response = supabase.auth.signUpWith(Email) {
             this.email    = email
             this.password = password
         }
 
-        val uid = response?.id ?: error("Gagal mendapatkan ID user baru dari Supabase Auth")
+        val uid = response?.id ?: error("Gagal mendapatkan ID user baru")
 
-        db.from("profiles").insert(
-            UserProfileInsert(
-                id       = uid,
-                fullName = fullName,
-                role     = "cashier",
-                isActive = true,
-            )
-        )
+        // Update full_name karena trigger mengisi dari email, bukan nama yang diinput
+        db.from("profiles")
+            .update({ set("full_name", fullName) }) {
+                filter { eq("id", uid) }
+            }
 
-        Log.d(TAG, "Kasir baru berhasil dibuat: $email (uid=$uid)")
+        Log.d(TAG, "Kasir baru: $email (uid=$uid)")
     }
 
     /**
