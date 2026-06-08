@@ -32,7 +32,7 @@ private val bottomNavRoutes = setOf(
     Screen.Biaya.route,
 )
 
-// Route yang mendapat TopBar dari Scaffold
+// Route yang mendapat TopBar dari Scaffold (tab utama + ProfileScreen)
 private val topBarRoutes = bottomNavRoutes + setOf(Screen.Profile.route)
 
 private fun routeToTitle(route: String?): String = when (route) {
@@ -79,6 +79,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
     val profileViewModel: ProfileViewModel = viewModel()
 
     // Setiap kali MainNavHost dibuat ulang dengan startDestination = Beranda
+    // (terjadi setelah login berhasil), muat ulang profil agar tidak pakai data user lama.
     LaunchedEffect(startDestination) {
         if (startDestination == Screen.Beranda.route) {
             profileViewModel.muatProfilSaya()
@@ -87,6 +88,11 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
 
     LaunchedEffect(uiState.value) {
         if (uiState.value is AuthUiState.Success) {
+            // Simpan kredensial admin untuk re-login setelah signUpWith kasir baru
+            profileViewModel.simpanKredensialAdmin(
+                email    = email.value,
+                password = password.value,
+            )
             navController.navigate(Screen.Beranda.route) {
                 popUpTo(Screen.Login.route) { inclusive = true }
             }
@@ -122,7 +128,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
             startDestination = startDestination,
             modifier         = Modifier.padding(innerPadding)
         ) {
-            //  Auth
+            // Auth
             composable(Screen.Login.route) {
                 LoginScreen(
                     email                = email.value,
@@ -151,6 +157,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
             composable(Screen.Beranda.route) {
                 BerandaScreen(
                     onLogoutClick = {
+                        profileViewModel.bersihkanKredensial()
                         authViewModel.logout()
                         navController.navigate(Screen.Login.route) {
                             popUpTo(0) { inclusive = true }
@@ -273,6 +280,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 ProfileScreen(
                     vm             = profileViewModel,
                     onLogout       = {
+                        profileViewModel.bersihkanKredensial()
                         authViewModel.logout()
                         navController.navigate(Screen.Login.route) {
                             popUpTo(0) { inclusive = true }
