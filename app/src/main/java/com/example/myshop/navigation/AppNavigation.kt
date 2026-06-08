@@ -24,7 +24,6 @@ import com.example.myshop.ui.screen.*
 import com.example.myshop.ui.theme.NavyPrimary
 import com.example.myshop.viewmodel.*
 
-// Tab-tab utama yang tampilkan BottomNavBar
 private val bottomNavRoutes = setOf(
     Screen.Beranda.route,
     Screen.Kasir.route,
@@ -33,17 +32,20 @@ private val bottomNavRoutes = setOf(
     Screen.Biaya.route,
 )
 
-// Route yang mendapat TopBar dari Scaffold.
+// Route yang mendapat TopBar dari Scaffold
 private val topBarRoutes = bottomNavRoutes + setOf(Screen.Profile.route)
 
 private fun routeToTitle(route: String?): String = when (route) {
-    Screen.Beranda.route -> "Beranda"
-    Screen.Kasir.route   -> "Kasir - Transaksi Penjualan"
-    Screen.Kas.route     -> "Manajemen Kas"
-    Screen.Stok.route    -> "Stok Produk"
-    Screen.Biaya.route   -> "Biaya Operasional"
-    Screen.Profile.route -> "Profil"
-    else                 -> "Toko-I"
+    Screen.Beranda.route      -> "Beranda"
+    Screen.Kasir.route        -> "Kasir - Transaksi Penjualan"
+    Screen.Kas.route          -> "Manajemen Kas"
+    Screen.Stok.route         -> "Stok Produk"
+    Screen.TambahProduk.route -> "Tambah Produk"
+    Screen.DetailProduk.route -> "Detail Produk"
+    Screen.EditProduk.route   -> "Edit Produk"
+    Screen.Biaya.route        -> "Biaya Operasional"
+    Screen.Profile.route      -> "Profil"
+    else                      -> "Toko-I"
 }
 
 @Composable
@@ -70,8 +72,18 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
     val uiState  = authViewModel.uiState.collectAsStateWithLifecycle()
 
     val kasViewModel    : KasViewModel     = viewModel()
+    val kasirViewModel  : KasirViewModel   = viewModel()
     val produkViewModel : ProdukViewModel  = viewModel()
+
+    // ProfileViewModel di-hoist di sini agar tidak di-recreate setiap buka ProfileScreen
     val profileViewModel: ProfileViewModel = viewModel()
+
+    // Setiap kali MainNavHost dibuat ulang dengan startDestination = Beranda
+    LaunchedEffect(startDestination) {
+        if (startDestination == Screen.Beranda.route) {
+            profileViewModel.muatProfilSaya()
+        }
+    }
 
     LaunchedEffect(uiState.value) {
         if (uiState.value is AuthUiState.Success) {
@@ -85,8 +97,8 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute      = navBackStackEntry?.destination?.route
 
-    val showTopBar    = currentRoute in topBarRoutes
-    val showBottomBar = currentRoute in bottomNavRoutes
+    val showTopBar      = currentRoute in topBarRoutes
+    val showBottomBar   = currentRoute in bottomNavRoutes
     val isProfileScreen = currentRoute == Screen.Profile.route
 
     Scaffold(
@@ -94,8 +106,6 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
             if (showTopBar) {
                 TopBar(
                     title           = routeToTitle(currentRoute),
-                    // ProfileScreen: tampilkan back button, sembunyikan ikon profil
-                    // Tab utama    : tampilkan hamburger, ikon profil aktif
                     showBackButton  = isProfileScreen,
                     onBackClick     = { navController.popBackStack() },
                     showProfileIcon = !isProfileScreen,
@@ -112,7 +122,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
             startDestination = startDestination,
             modifier         = Modifier.padding(innerPadding)
         ) {
-            // Auth
+            //  Auth
             composable(Screen.Login.route) {
                 LoginScreen(
                     email                = email.value,
@@ -137,7 +147,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 )
             }
 
-            // Tab utama (mendapat TopBar dari Scaffold di atas)
+            // Tab utama
             composable(Screen.Beranda.route) {
                 BerandaScreen(
                     onLogoutClick = {
@@ -180,7 +190,6 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
             composable(Screen.Biaya.route) { BiayaScreen() }
 
             // Sub-screen Kas
-            // TambahKasScreen mengelola navigasi back sendiri via tombol "Batal"
             composable(Screen.TambahKas.route) {
                 val kasUiState by kasViewModel.uiState.collectAsStateWithLifecycle()
                 val namaKas    by kasViewModel.namaKas.collectAsStateWithLifecycle()
@@ -204,7 +213,6 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 )
             }
 
-            // KasLogScreen punya DetailTopBar sendiri di dalam composable-nya
             composable(Screen.DetailKas.route) {
                 val kasTerpilih by kasViewModel.kasTerpilih.collectAsStateWithLifecycle()
                 val logKas      by kasViewModel.logKas.collectAsStateWithLifecycle()
@@ -260,7 +268,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 )
             }
 
-            // ProfileScreen (mendapat TopBar dari Scaffold dengan back button)
+            // Profil
             composable(Screen.Profile.route) {
                 ProfileScreen(
                     vm             = profileViewModel,
