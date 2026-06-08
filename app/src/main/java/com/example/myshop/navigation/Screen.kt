@@ -19,40 +19,27 @@ sealed class Screen(val route: String) {
     object Kasir    : Screen("kasir")
     object Kas      : Screen("kas")
     object TambahKas : Screen("tambah_kas")
-
     object DetailKas : Screen("detail_kas")
     object Stok     : Screen("stok")
     object Biaya    : Screen("biaya")
 
-    object Produk : Screen("produk")
-
+    // Produk
     object TambahProduk : Screen("tambah_produk")
-
     object DetailProduk : Screen("detail_produk/{produkId}") {
-
-        fun createRoute(produkId: String): String {
-
-            return "detail_produk/$produkId"
-        }
+        fun createRoute(produkId: String) = "detail_produk/$produkId"
     }
-
     object EditProduk : Screen("edit_produk/{produkId}") {
-
-        fun createRoute(produkId: String): String {
-
-            return "edit_produk/$produkId"
-        }
+        fun createRoute(produkId: String) = "edit_produk/$produkId"
     }
+
+    // Profil
+    object Profile : Screen("profile")
 }
 
-/**
- * Item untuk Bottom Navigation Bar.
- * Tambahkan entry baru di sini kalau ada tab baru.
- */
 data class BottomNavItem(
-    val screen  : Screen,
-    val label   : String,
-    val icon    : ImageVector
+    val screen : Screen,
+    val label  : String,
+    val icon   : ImageVector
 )
 
 val bottomNavItems = listOf(
