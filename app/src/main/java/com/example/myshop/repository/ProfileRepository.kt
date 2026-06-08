@@ -2,12 +2,14 @@ package com.example.myshop.repository
 
 import android.util.Log
 import com.example.myshop.data.SupabaseClientProvider
+import com.example.myshop.model.Role
 import com.example.myshop.model.UserProfile
 import com.example.myshop.model.UserProfileInsert
 import com.example.myshop.model.UserProfileWithEmail
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 
 private const val TAG = "ProfileRepository"
 
@@ -25,7 +27,7 @@ class ProfileRepository {
             .select { filter { eq("id", currentUser.id) } }
             .decodeSingle<UserProfile>()
 
-        Log.d(TAG, "Profil dimuat: ${currentUser.email} role=${profile.role}")
+        Log.d(TAG, "Profil dimuat: ${currentUser.email} role=${profile.role} isAdmin=${profile.isAdmin}")
 
         return UserProfileWithEmail(
             profile = profile,
@@ -33,13 +35,14 @@ class ProfileRepository {
         )
     }
 
-    /** Ambil semua profil untuk tampilan admin */
+    /**
+     * Ambil semua profil
+     */
     suspend fun getSemuaProfil(): List<UserProfileWithEmail> {
         val result = db.from("profiles")
             .select()
             .decodeList<UserProfile>()
             .sortedWith { a, b ->
-                // Admin di atas; dalam grup yang sama urutkan alfabetis by full_name
                 if (a.role != b.role) {
                     if (a.isAdmin) -1 else 1
                 } else {
@@ -52,10 +55,7 @@ class ProfileRepository {
         return result
     }
 
-    /**
-     * Daftarkan kasir baru ke Supabase Auth lalu insert ke tabel profiles.
-     * Hanya dipanggil dari ProfileViewModel setelah validasi admin.
-     */
+    /** Daftarkan kasir baru ke Auth lalu insert profil dengan role 'cashier' */
     suspend fun tambahKasir(fullName: String, email: String, password: String) {
         val response = supabase.auth.signUpWith(Email) {
             this.email    = email
@@ -68,19 +68,38 @@ class ProfileRepository {
             UserProfileInsert(
                 id       = uid,
                 fullName = fullName,
-                role     = "kasir",
+                role     = Role.CASHIER,  // nilai yang cocok dengan DB
                 isActive = true,
             )
         )
 
-        Log.d(TAG, "Kasir baru: $email (uid=$uid)")
+        Log.d(TAG, "Kasir baru berhasil dibuat: $email (uid=$uid)")
     }
 
-    /** Update kolom full_name */
+    /**
+     * Update kolom full_name
+     */
     suspend fun updateNamaProfil(profileId: String, fullNameBaru: String) {
-        db.from("profiles").update({ set("full_name", fullNameBaru) }) {
-            filter { eq("id", profileId) }
+        val updated = db.from("profiles")
+            .update({ set("full_name", fullNameBaru) }) {
+                filter { eq("id", profileId) }
+                select(Columns.list("id", "full_name"))
+            }
+            .decodeList<UserProfile>()
+
+        Log.d(TAG, "Rows updated: ${updated.size} — id=$profileId → \"$fullNameBaru\"")
+
+        if (updated.isEmpty()) {
+            error(
+                "Update gagal. Kemungkinan penyebab:\n" +
+                        "1. Policy UPDATE admin belum dibuat di Supabase.\n" +
+                        "2. Role user yang login bukan 'admin' di tabel profiles.\n\n" +
+                        "Jalankan SQL ini di Supabase SQL Editor:\n" +
+                        "create policy \"profile_update_admin_all\" on public.profiles for update\n" +
+                        "to public\n" +
+                        "using (get_user_role() = 'admin')\n" +
+                        "with check (get_user_role() = 'admin');"
+            )
         }
-        Log.d(TAG, "full_name diperbarui: profileId=$profileId → \"$fullNameBaru\"")
     }
 }
