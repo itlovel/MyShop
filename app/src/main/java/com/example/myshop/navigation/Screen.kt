@@ -34,6 +34,16 @@ sealed class Screen(val route: String) {
 
     // Profil
     object Profile : Screen("profile")
+
+    // Pelanggan
+    object Pelanggan : Screen("pelanggan")
+    object TambahPelanggan : Screen("tambah_pelanggan")
+    object EditPelanggan : Screen("edit_pelanggan/{pelangganId}") {
+        fun createRoute(pelangganId: String) = "edit_pelanggan/$pelangganId"
+    }
+    object PelangganLog : Screen("pelanggan_log/{pelangganId}") {
+        fun createRoute(pelangganId: String) = "pelanggan_log/$pelangganId"
+    }
 }
 
 data class BottomNavItem(
