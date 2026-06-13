@@ -29,7 +29,7 @@ private val bottomNavRoutes = setOf(
     Screen.Kasir.route,
     Screen.Kas.route,
     Screen.Stok.route,
-    Screen.Biaya.route,
+    Screen.Pengeluaran.route,
 )
 
 // Route yang mendapat TopBar dari Scaffold (tab utama + ProfileScreen)
@@ -43,7 +43,7 @@ private fun routeToTitle(route: String?): String = when (route) {
     Screen.TambahProduk.route -> "Tambah Produk"
     Screen.DetailProduk.route -> "Detail Produk"
     Screen.EditProduk.route   -> "Edit Produk"
-    Screen.Biaya.route        -> "Biaya Operasional"
+    Screen.Pengeluaran.route  -> "Pengeluaran"
     Screen.Profile.route      -> "Profil"
     else                      -> "Toko-I"
 }
@@ -74,6 +74,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
     val kasViewModel    : KasViewModel     = viewModel()
     val kasirViewModel  : KasirViewModel   = viewModel()
     val produkViewModel : ProdukViewModel  = viewModel()
+    val pengeluaranViewModel: PengeluaranViewModel = viewModel()
 
     // ProfileViewModel di-hoist di sini agar tidak di-recreate setiap buka ProfileScreen
     val profileViewModel: ProfileViewModel = viewModel()
@@ -194,7 +195,19 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 )
             }
 
-            composable(Screen.Biaya.route) { BiayaScreen() }
+            composable(Screen.Pengeluaran.route) {
+                PengeluaranScreen(
+                    onTambahClick = {
+                        navController.navigate(Screen.TambahPengeluaran.route)
+                    },
+                    onDetailClick = { pengeluaranId ->
+                        navController.navigate(
+                            Screen.DetailPengeluaran.createRoute(pengeluaranId)
+                        )
+                    },
+                    pengeluaranViewModel = pengeluaranViewModel
+                )
+            }
 
             // Sub-screen Kas
             composable(Screen.TambahKas.route) {
@@ -272,6 +285,31 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                         produkViewModel.getProduk()
                         navController.popBackStack()
                     }
+                )
+            }
+
+            // Sub-screen Pengeluaran
+            composable(Screen.TambahPengeluaran.route) {
+                TambahPengeluaranScreen(
+                    onBackClick = {
+                        pengeluaranViewModel.getPengeluaran()
+                        kasViewModel.muatDataKas()
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable(
+                route = Screen.DetailPengeluaran.route,
+                arguments = listOf(navArgument("pengeluaranId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val pengeluaranId =
+                    backStackEntry.arguments?.getString("pengeluaranId").orEmpty()
+
+                DetailPengeluaranScreen(
+                    pengeluaranId = pengeluaranId,
+                    onBackClick = { navController.popBackStack() },
+                    pengeluaranViewModel = pengeluaranViewModel
                 )
             }
 

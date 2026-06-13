@@ -166,20 +166,28 @@ fun ProdukScreen(
 
                         Card(
 
+                            modifier =
+                                Modifier.fillMaxWidth(),
+
                             shape =
-                                RoundedCornerShape(20.dp),
+                                RoundedCornerShape(16.dp),
 
                             colors =
                                 CardDefaults.cardColors(
 
                                     containerColor =
-                                        MaterialTheme.colorScheme.surface
+                                        MaterialTheme.colorScheme.primary
                                 )
                         ) {
 
                             Column(
                                 modifier =
-                                    Modifier.padding(20.dp)
+                                    Modifier.padding(
+                                        vertical = 32.dp,
+                                        horizontal = 16.dp
+                                    ),
+                                horizontalAlignment =
+                                    Alignment.CenterHorizontally
                             ) {
 
                                 Text(
@@ -188,9 +196,10 @@ fun ProdukScreen(
                                         "RINGKASAN STOK",
 
                                     color =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.6f
-                                        )
+                                        Color.White.copy(alpha = 0.8f),
+
+                                    style =
+                                        MaterialTheme.typography.labelLarge
                                 )
 
                                 Spacer(
@@ -202,11 +211,17 @@ fun ProdukScreen(
 
                                     Column(
                                         modifier =
-                                            Modifier.weight(1f)
+                                            Modifier.weight(1f),
+
+                                        horizontalAlignment =
+                                            Alignment.CenterHorizontally
                                     ) {
 
                                         Text(
-                                            "Total Produk"
+                                            text = "Total Produk",
+
+                                            color =
+                                                Color.White.copy(alpha = 0.75f)
                                         )
 
                                         Spacer(
@@ -220,17 +235,26 @@ fun ProdukScreen(
                                                 totalProduk.toString(),
 
                                             style =
-                                                MaterialTheme.typography.headlineMedium
+                                                MaterialTheme.typography.headlineMedium,
+
+                                            color =
+                                                Color.White
                                         )
                                     }
 
                                     Column(
                                         modifier =
-                                            Modifier.weight(1f)
+                                            Modifier.weight(1f),
+
+                                        horizontalAlignment =
+                                            Alignment.CenterHorizontally
                                     ) {
 
                                         Text(
-                                            "Total Item"
+                                            text = "Total Item",
+
+                                            color =
+                                                Color.White.copy(alpha = 0.75f)
                                         )
 
                                         Spacer(
@@ -244,7 +268,10 @@ fun ProdukScreen(
                                                 totalItem.toInt().toString(),
 
                                             style =
-                                                MaterialTheme.typography.headlineMedium
+                                                MaterialTheme.typography.headlineMedium,
+
+                                            color =
+                                                Color.White
                                         )
                                     }
                                 }

@@ -130,10 +130,11 @@ fun ProdukItem(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            TextButton(
-                onClick = onDetailClick
+            Button(
+                onClick = onDetailClick,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp)
             ) {
-
                 Text("Lihat Detail Stok")
             }
         }
