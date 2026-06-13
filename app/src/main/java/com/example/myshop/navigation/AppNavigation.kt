@@ -55,7 +55,9 @@ private val topBarRoutes = bottomNavRoutes + setOf(
     Screen.Pelanggan.route,
     Screen.TambahPelanggan.route,
     Screen.EditPelanggan.route,
-    Screen.PelangganLog.route
+    Screen.PelangganLog.route,
+    Screen.TambahKas.route,
+    Screen.DetailKas.route
 )
 
 private val backButtonRoutes = setOf(
@@ -63,7 +65,9 @@ private val backButtonRoutes = setOf(
     Screen.Pelanggan.route,
     Screen.TambahPelanggan.route,
     Screen.EditPelanggan.route,
-    Screen.PelangganLog.route
+    Screen.PelangganLog.route,
+    Screen.TambahKas.route,
+    Screen.DetailKas.route
 )
 
 private fun routeToTitle(route: String?): String = when (route) {
@@ -82,6 +86,8 @@ private fun routeToTitle(route: String?): String = when (route) {
     Screen.TambahPelanggan.route -> "Tambah Pelanggan"
     Screen.EditPelanggan.route -> "Edit Pelanggan"
     Screen.PelangganLog.route -> "Riwayat Pelanggan"
+    Screen.TambahKas.route -> "Tambah Kas"
+    Screen.DetailKas.route -> "Detail Transaksi Kas"
 
     else                      -> "Toko-I"
 }
