@@ -49,7 +49,7 @@ private val bottomNavRoutes = setOf(
     Screen.Pengeluaran.route,
 )
 
-// Route yang mendapat TopBar dari Scaffold (tab utama)
+// Route yang mendapat TopBar dari Scaffold (tab utama + sub-screens)
 private val topBarRoutes = bottomNavRoutes + setOf(
     Screen.Profile.route,
     Screen.Pelanggan.route,
@@ -81,14 +81,14 @@ private fun routeToTitle(route: String?): String = when (route) {
     Screen.Pengeluaran.route  -> "Pengeluaran"
     Screen.Profile.route      -> "Profil"
 
-    Screen.Pelanggan.route -> "Pelanggan"
+    Screen.Pelanggan.route       -> "Pelanggan"
     Screen.TambahPelanggan.route -> "Tambah Pelanggan"
-    Screen.EditPelanggan.route -> "Edit Pelanggan"
-    Screen.PelangganLog.route -> "Riwayat Pelanggan"
-    Screen.TambahKas.route -> "Tambah Kas"
-    Screen.DetailKas.route -> "Detail Transaksi Kas"
+    Screen.EditPelanggan.route   -> "Edit Pelanggan"
+    Screen.PelangganLog.route    -> "Riwayat Pelanggan"
+    Screen.TambahKas.route       -> "Tambah Kas"
+    Screen.DetailKas.route       -> "Detail Transaksi Kas"
 
-    else                      -> "Toko-I"
+    else                         -> "Toko-I"
 }
 
 @Composable
@@ -121,18 +121,12 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
     val kasirViewModel: KasirViewModel = viewModel()
     val produkViewModel: ProdukViewModel = viewModel()
     val pengeluaranViewModel: PengeluaranViewModel = viewModel()
-
-    // ProfileViewModel di-hoist di sini agar tidak di-recreate setiap buka ProfileScreen
     val profileViewModel: ProfileViewModel = viewModel()
-
     val pelangganViewModel: PelangganViewModel = viewModel()
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-
-    // Setiap kali MainNavHost dibuat ulang dengan startDestination = Beranda
-    // (terjadi setelah login berhasil), muat ulang profil agar tidak pakai data user lama.
     LaunchedEffect(startDestination) {
         if (startDestination == Screen.Beranda.route) {
             profileViewModel.muatProfilSaya()
@@ -141,7 +135,6 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
 
     LaunchedEffect(uiState.value) {
         if (uiState.value is AuthUiState.Success) {
-            // Simpan kredensial admin untuk re-login setelah signUpWith kasir baru
             profileViewModel.simpanKredensialAdmin(
                 email = email.value,
                 password = password.value,
@@ -159,8 +152,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
     val showTopBar = currentRoute in topBarRoutes
     val showBottomBar = currentRoute in bottomNavRoutes
     val showBackButton = currentRoute in backButtonRoutes
-    val showDrawer = currentRoute != Screen.Login.route &&
-            currentRoute != Screen.Register.route
+    val showDrawer = currentRoute != Screen.Login.route && currentRoute != Screen.Register.route
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -176,9 +168,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 )
 
                 NavigationDrawerItem(
-                    label = {
-                        Text("Pelanggan")
-                    },
+                    label = { Text("Pelanggan") },
                     selected = currentRoute == Screen.Pelanggan.route,
                     icon = {
                         Icon(
@@ -195,10 +185,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                         unselectedIconColor = CardWhite
                     ),
                     onClick = {
-                        scope.launch {
-                            drawerState.close()
-                        }
-
+                        scope.launch { drawerState.close() }
                         navController.navigate(Screen.Pelanggan.route) {
                             launchSingleTop = true
                         }
@@ -207,7 +194,6 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
             }
         }
     ) {
-
         Scaffold(
             topBar = {
                 if (showTopBar) {
@@ -216,9 +202,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                         showBackButton = showBackButton,
                         onBackClick = { navController.popBackStack() },
                         onMenuClick = {
-                            scope.launch {
-                                drawerState.open()
-                            }
+                            scope.launch { drawerState.open() }
                         },
                         showProfileIcon = currentRoute != Screen.Profile.route,
                         onProfileClick = { navController.navigate(Screen.Profile.route) },
@@ -234,7 +218,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 startDestination = startDestination,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                // Auth
+                // --- AUTHENTICATION ---
                 composable(Screen.Login.route) {
                     LoginScreen(
                         email = email.value,
@@ -259,7 +243,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                     )
                 }
 
-                // Tab utama
+                // --- MAIN TABS ---
                 composable(Screen.Beranda.route) {
                     BerandaScreen(
                         onLogoutClick = {
@@ -279,12 +263,12 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
 
                 composable(Screen.Kas.route) {
                     val daftarKas by kasViewModel.daftarKas.collectAsStateWithLifecycle()
-                    val uiState by kasViewModel.uiState.collectAsStateWithLifecycle()
+                    val kasUiState by kasViewModel.uiState.collectAsStateWithLifecycle()
                     val isLoadingData by kasViewModel.isLoadingData.collectAsStateWithLifecycle()
 
                     KasListScreen(
                         daftarKas = daftarKas,
-                        uiState = uiState,
+                        uiState = kasUiState,
                         isLoadingData = isLoadingData,
                         onTambahKasClick = { navController.navigate(Screen.TambahKas.route) },
                         onDetailClick = { kas ->
@@ -308,19 +292,15 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
 
                 composable(Screen.Pengeluaran.route) {
                     PengeluaranScreen(
-                        onTambahClick = {
-                            navController.navigate(Screen.TambahPengeluaran.route)
-                        },
+                        onTambahClick = { navController.navigate(Screen.TambahPengeluaran.route) },
                         onDetailClick = { pengeluaranId ->
-                            navController.navigate(
-                                Screen.DetailPengeluaran.createRoute(pengeluaranId)
-                            )
+                            navController.navigate(Screen.DetailPengeluaran.createRoute(pengeluaranId))
                         },
                         pengeluaranViewModel = pengeluaranViewModel
                     )
                 }
 
-                // Sub-screen Kas
+                // --- SUB-SCREEN KAS ---
                 composable(Screen.TambahKas.route) {
                     val kasUiState by kasViewModel.uiState.collectAsStateWithLifecycle()
                     val namaKas by kasViewModel.namaKas.collectAsStateWithLifecycle()
@@ -358,7 +338,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                     )
                 }
 
-                // Sub-screen Produk
+                // --- SUB-SCREEN PRODUK ---
                 composable(Screen.TambahProduk.route) {
                     TambahProdukScreen(
                         onBackClick = {
@@ -399,32 +379,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                     )
                 }
 
-                composable(Screen.Pelanggan.route) {
-                    PelangganListScreen(
-                        viewModel = pelangganViewModel,
-                        onAddClick = {
-                            navController.navigate(Screen.TambahPelanggan.route)
-                        },
-                        onEditClick = { pelanggan ->
-                            navController.navigate(Screen.EditPelanggan.createRoute(pelanggan.id))
-                        },
-                        onLogClick = { pelangganId ->
-                            navController.navigate(Screen.PelangganLog.createRoute(pelangganId))
-                        }
-                    )
-                }
-
-                composable(Screen.TambahPelanggan.route) {
-                    PelangganFormScreen(
-                        pelanggan = null,
-                        viewModel = pelangganViewModel,
-                        onSaved = {
-                            navController.popBackStack()
-                        }
-                    )
-                }
-
-                // Sub-screen Pengeluaran
+                // --- SUB-SCREEN PENGELUARAN ---
                 composable(Screen.TambahPengeluaran.route) {
                     TambahPengeluaranScreen(
                         onBackClick = {
@@ -439,9 +394,7 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                     route = Screen.DetailPengeluaran.route,
                     arguments = listOf(navArgument("pengeluaranId") { type = NavType.StringType })
                 ) { backStackEntry ->
-                    val pengeluaranId =
-                        backStackEntry.arguments?.getString("pengeluaranId").orEmpty()
-
+                    val pengeluaranId = backStackEntry.arguments?.getString("pengeluaranId").orEmpty()
                     DetailPengeluaranScreen(
                         pengeluaranId = pengeluaranId,
                         onBackClick = { navController.popBackStack() },
@@ -449,7 +402,75 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                     )
                 }
 
-                // Profil
+                // --- PELANGGAN MODULE ---
+                composable(Screen.Pelanggan.route) {
+                    PelangganListScreen(
+                        viewModel = pelangganViewModel,
+                        onAddClick = { navController.navigate(Screen.TambahPelanggan.route) },
+                        onEditClick = { pelanggan ->
+                            navController.navigate(Screen.EditPelanggan.createRoute(pelanggan.id))
+                        },
+                        onLogClick = { pelangganId ->
+                            navController.navigate(Screen.PelangganLog.createRoute(pelangganId))
+                        }
+                    )
+                }
+
+                composable(Screen.TambahPelanggan.route) {
+                    PelangganFormScreen(
+                        pelanggan = null,
+                        viewModel = pelangganViewModel,
+                        onSaved = { navController.popBackStack() }
+                    )
+                }
+
+                composable(
+                    route = Screen.EditPelanggan.route,
+                    arguments = listOf(navArgument("pelangganId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val pelangganId = backStackEntry.arguments?.getString("pelangganId").orEmpty()
+                    val selectedState by pelangganViewModel.selectedPelangganState.collectAsStateWithLifecycle()
+
+                    LaunchedEffect(pelangganId) {
+                        pelangganViewModel.resetFormState()
+                        pelangganViewModel.fetchPelangganById(pelangganId)
+                    }
+
+                    when (val state = selectedState) {
+                        UiState.Loading -> {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = NavyPrimary)
+                            }
+                        }
+                        is UiState.Error -> {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(state.message)
+                            }
+                        }
+                        is UiState.Success -> {
+                            state.data?.let { pelanggan ->
+                                PelangganFormScreen(
+                                    pelanggan = pelanggan,
+                                    viewModel = pelangganViewModel,
+                                    onSaved = { navController.popBackStack() }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                composable(
+                    route = Screen.PelangganLog.route,
+                    arguments = listOf(navArgument("pelangganId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val pelangganId = backStackEntry.arguments?.getString("pelangganId").orEmpty()
+                    PelangganLogScreen(
+                        pelangganId = pelangganId,
+                        viewModel = pelangganViewModel
+                    )
+                }
+
+                // --- PROFIL ---
                 composable(Screen.Profile.route) {
                     ProfileScreen(
                         vm = profileViewModel,
@@ -462,79 +483,6 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                         },
                         onNavigateBack = { navController.popBackStack() }
                     )
-                    composable(
-                        route = Screen.EditPelanggan.route,
-                        arguments = listOf(navArgument("pelangganId") { type = NavType.StringType })
-                    ) { backStackEntry ->
-                        val pelangganId =
-                            backStackEntry.arguments?.getString("pelangganId").orEmpty()
-                        val selectedState by pelangganViewModel.selectedPelangganState.collectAsStateWithLifecycle()
-
-                        LaunchedEffect(pelangganId) {
-                            pelangganViewModel.resetFormState()
-                            pelangganViewModel.fetchPelangganById(pelangganId)
-                        }
-
-                        when (val state = selectedState) {
-                            UiState.Loading -> {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(color = NavyPrimary)
-                                }
-                            }
-
-                            is UiState.Error -> {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(state.message)
-                                }
-                            }
-
-                            is UiState.Success -> {
-                                state.data?.let { pelanggan ->
-                                    PelangganFormScreen(
-                                        pelanggan = pelanggan,
-                                        viewModel = pelangganViewModel,
-                                        onSaved = {
-                                            navController.popBackStack()
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    composable(
-                        route = Screen.PelangganLog.route,
-                        arguments = listOf(navArgument("pelangganId") { type = NavType.StringType })
-                    ) { backStackEntry ->
-                        val pelangganId =
-                            backStackEntry.arguments?.getString("pelangganId").orEmpty()
-
-                        PelangganLogScreen(
-                            pelangganId = pelangganId,
-                            viewModel = pelangganViewModel
-                        )
-                    }
-
-                    // Profil
-                    composable(Screen.Profile.route) {
-                        ProfileScreen(
-                            vm = profileViewModel,
-                            onLogout = {
-                                profileViewModel.bersihkanKredensial()
-                                authViewModel.logout()
-                                navController.navigate(Screen.Login.route) {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            },
-                            onNavigateBack = { navController.popBackStack() }
-                        )
-                    }
                 }
             }
         }
