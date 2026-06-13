@@ -7,6 +7,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -21,13 +22,7 @@ import com.example.myshop.ui.components.BottomNavBar
 import com.example.myshop.ui.components.TopBar
 import com.example.myshop.ui.screen.*
 import com.example.myshop.ui.theme.NavyPrimary
-import com.example.myshop.viewmodel.AuthCheckState
-import com.example.myshop.viewmodel.AuthUiState
-import com.example.myshop.viewmodel.AuthViewModel
-import com.example.myshop.viewmodel.KasirViewModel
-import com.example.myshop.viewmodel.ProdukViewModel
 import com.example.myshop.viewmodel.*
-import androidx.compose.runtime.getValue
 
 private val bottomNavRoutes = setOf(
     Screen.Beranda.route,
@@ -36,6 +31,9 @@ private val bottomNavRoutes = setOf(
     Screen.Stok.route,
     Screen.Biaya.route,
 )
+
+// Route yang mendapat TopBar dari Scaffold (tab utama + ProfileScreen)
+private val topBarRoutes = bottomNavRoutes + setOf(Screen.Profile.route)
 
 private fun routeToTitle(route: String?): String = when (route) {
     Screen.Beranda.route      -> "Beranda"
@@ -46,6 +44,7 @@ private fun routeToTitle(route: String?): String = when (route) {
     Screen.DetailProduk.route -> "Detail Produk"
     Screen.EditProduk.route   -> "Edit Produk"
     Screen.Biaya.route        -> "Biaya Operasional"
+    Screen.Profile.route      -> "Profil"
     else                      -> "Toko-I"
 }
 
@@ -72,11 +71,28 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
     val password = authViewModel.password.collectAsStateWithLifecycle()
     val uiState  = authViewModel.uiState.collectAsStateWithLifecycle()
 
-    // ViewModel yang di-share antara List Kas dan Tambah Kas
-    val kasViewModel: KasViewModel = viewModel()
+    val kasViewModel    : KasViewModel     = viewModel()
+    val kasirViewModel  : KasirViewModel   = viewModel()
+    val produkViewModel : ProdukViewModel  = viewModel()
+
+    // ProfileViewModel di-hoist di sini agar tidak di-recreate setiap buka ProfileScreen
+    val profileViewModel: ProfileViewModel = viewModel()
+
+    // Setiap kali MainNavHost dibuat ulang dengan startDestination = Beranda
+    // (terjadi setelah login berhasil), muat ulang profil agar tidak pakai data user lama.
+    LaunchedEffect(startDestination) {
+        if (startDestination == Screen.Beranda.route) {
+            profileViewModel.muatProfilSaya()
+        }
+    }
 
     LaunchedEffect(uiState.value) {
         if (uiState.value is AuthUiState.Success) {
+            // Simpan kredensial admin untuk re-login setelah signUpWith kasir baru
+            profileViewModel.simpanKredensialAdmin(
+                email    = email.value,
+                password = password.value,
+            )
             navController.navigate(Screen.Beranda.route) {
                 popUpTo(Screen.Login.route) { inclusive = true }
             }
@@ -84,22 +100,35 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
         }
     }
 
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-    val showChrome   = currentRoute in bottomNavRoutes
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute      = navBackStackEntry?.destination?.route
 
-    // KasirViewModel di-hoist di sini agar tidak di-recreate setiap navigasi
-    val kasirViewModel: KasirViewModel = viewModel()
-    val produkViewModel: ProdukViewModel = viewModel()
+    val showTopBar      = currentRoute in topBarRoutes
+    val showBottomBar   = currentRoute in bottomNavRoutes
+    val isProfileScreen = currentRoute == Screen.Profile.route
 
     Scaffold(
-        topBar    = { if (showChrome) TopBar(title = routeToTitle(currentRoute)) },
-        bottomBar = { if (showChrome) BottomNavBar(navController = navController) }
+        topBar = {
+            if (showTopBar) {
+                TopBar(
+                    title           = routeToTitle(currentRoute),
+                    showBackButton  = isProfileScreen,
+                    onBackClick     = { navController.popBackStack() },
+                    showProfileIcon = !isProfileScreen,
+                    onProfileClick  = { navController.navigate(Screen.Profile.route) },
+                )
+            }
+        },
+        bottomBar = {
+            if (showBottomBar) BottomNavBar(navController = navController)
+        }
     ) { innerPadding ->
         NavHost(
             navController    = navController,
             startDestination = startDestination,
             modifier         = Modifier.padding(innerPadding)
         ) {
+            // Auth
             composable(Screen.Login.route) {
                 LoginScreen(
                     email                = email.value,
@@ -124,9 +153,11 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 )
             }
 
+            // Tab utama
             composable(Screen.Beranda.route) {
                 BerandaScreen(
                     onLogoutClick = {
+                        profileViewModel.bersihkanKredensial()
                         authViewModel.logout()
                         navController.navigate(Screen.Login.route) {
                             popUpTo(0) { inclusive = true }
@@ -136,23 +167,22 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
             }
 
             composable(Screen.Kasir.route) {
-                // viewModel() di dalam composable() otomatis di-scope ke NavBackStackEntry
-                // ViewModel tetap hidup selama tab Kasir ada di back stack dan tidak di-recreate setiap kali pindah tab.
-                val kasirViewModel: KasirViewModel = viewModel()
-                KasirScreen(vm = kasirViewModel)
+                val vm: KasirViewModel = viewModel()
+                KasirScreen(vm = vm)
             }
 
-            composable(Screen.Kas.route)   {
+            composable(Screen.Kas.route) {
                 val daftarKas by kasViewModel.daftarKas.collectAsStateWithLifecycle()
                 val uiState by kasViewModel.uiState.collectAsStateWithLifecycle()
                 val isLoadingData by kasViewModel.isLoadingData.collectAsStateWithLifecycle()
 
                 KasListScreen(
+                    daftarKas        = daftarKas,
                     daftarKas = daftarKas,
                     uiState = uiState,
                     isLoadingData = isLoadingData,
                     onTambahKasClick = { navController.navigate(Screen.TambahKas.route) },
-                    onDetailClick = { kas ->
+                    onDetailClick    = { kas ->
                         kasViewModel.muatDetailKas(kas)
                         navController.navigate(Screen.DetailKas.route)
                     },
@@ -161,55 +191,57 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 )
             }
 
-            composable(Screen.TambahKas.route) {
-                val uiState by kasViewModel.uiState.collectAsStateWithLifecycle()
-                val namaKas by kasViewModel.namaKas.collectAsStateWithLifecycle()
-                val saldoAwal by kasViewModel.saldoAwal.collectAsStateWithLifecycle()
-
-                LaunchedEffect(uiState) {
-                    if (uiState is KasUiState.Success) {
-                        navController.popBackStack()
-                        kasViewModel.resetState()
-                    }
-                }
-
-                TambahKasScreen(
-                    namaKas = namaKas,
-                    saldoAwal = saldoAwal,
-                    uiState = uiState,
-                    onNamaKasChange = kasViewModel::onNamaKasChange,
-                    onSaldoAwalChange = kasViewModel::onSaldoAwalChange,
-                    onSimpanClick = kasViewModel::tambahKas,
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-            composable(Screen.DetailKas.route) {
-                val kasTerpilih by kasViewModel.kasTerpilih.collectAsStateWithLifecycle()
-                val logKas by kasViewModel.logKas.collectAsStateWithLifecycle()
-                val uiState by kasViewModel.uiState.collectAsStateWithLifecycle()
-
-                KasLogScreen(
-                    kas = kasTerpilih,
-                    logs = logKas,
-                    uiState = uiState,
-                    onNavigateBack = { navController.popBackStack() },
-                    onManualTransactionClick = {
-                        // TODO: Sambungkan ke layar transaksi kas manual saat fiturnya dibuat.
-                    }
-                )
-            }
             composable(Screen.Stok.route) {
                 StokScreen(
-                    vm = produkViewModel,
-                    onTambahClick = {
-                        navController.navigate(Screen.TambahProduk.route)
-                    },
+                    vm            = produkViewModel,
+                    onTambahClick = { navController.navigate(Screen.TambahProduk.route) },
                     onDetailClick = { produkId ->
                         navController.navigate(Screen.DetailProduk.createRoute(produkId))
                     }
                 )
             }
 
+            composable(Screen.Biaya.route) { BiayaScreen() }
+
+            // Sub-screen Kas
+            composable(Screen.TambahKas.route) {
+                val kasUiState by kasViewModel.uiState.collectAsStateWithLifecycle()
+                val namaKas    by kasViewModel.namaKas.collectAsStateWithLifecycle()
+                val saldoAwal  by kasViewModel.saldoAwal.collectAsStateWithLifecycle()
+
+                LaunchedEffect(kasUiState) {
+                    if (kasUiState is KasUiState.Success) {
+                        navController.popBackStack()
+                        kasViewModel.resetState()
+                    }
+                }
+
+                TambahKasScreen(
+                    namaKas           = namaKas,
+                    saldoAwal         = saldoAwal,
+                    uiState           = kasUiState,
+                    onNamaKasChange   = kasViewModel::onNamaKasChange,
+                    onSaldoAwalChange = kasViewModel::onSaldoAwalChange,
+                    onSimpanClick     = kasViewModel::tambahKas,
+                    onNavigateBack    = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.DetailKas.route) {
+                val kasTerpilih by kasViewModel.kasTerpilih.collectAsStateWithLifecycle()
+                val logKas      by kasViewModel.logKas.collectAsStateWithLifecycle()
+                val kasUiState  by kasViewModel.uiState.collectAsStateWithLifecycle()
+
+                KasLogScreen(
+                    kas                      = kasTerpilih,
+                    logs                     = logKas,
+                    uiState                  = kasUiState,
+                    onNavigateBack           = { navController.popBackStack() },
+                    onManualTransactionClick = {}
+                )
+            }
+
+            // Sub-screen Produk
             composable(Screen.TambahProduk.route) {
                 TambahProdukScreen(
                     onBackClick = {
@@ -220,13 +252,12 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
             }
 
             composable(
-                route = Screen.DetailProduk.route,
+                route     = Screen.DetailProduk.route,
                 arguments = listOf(navArgument("produkId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val produkId = backStackEntry.arguments?.getString("produkId").orEmpty()
-
                 DetailProdukScreen(
-                    produkId = produkId,
+                    produkId    = produkId,
                     onBackClick = {
                         produkViewModel.getProduk()
                         navController.popBackStack()
@@ -238,13 +269,12 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
             }
 
             composable(
-                route = Screen.EditProduk.route,
+                route     = Screen.EditProduk.route,
                 arguments = listOf(navArgument("produkId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val produkId = backStackEntry.arguments?.getString("produkId").orEmpty()
-
                 EditProdukScreen(
-                    produkId = produkId,
+                    produkId    = produkId,
                     onBackClick = {
                         produkViewModel.getProduk()
                         navController.popBackStack()
@@ -252,7 +282,20 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 )
             }
 
-            composable(Screen.Biaya.route) { BiayaScreen() }
+            // Profil
+            composable(Screen.Profile.route) {
+                ProfileScreen(
+                    vm             = profileViewModel,
+                    onLogout       = {
+                        profileViewModel.bersihkanKredensial()
+                        authViewModel.logout()
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

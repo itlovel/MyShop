@@ -53,7 +53,6 @@ fun TambahProdukScreen(
             viewModel::updateStok,
 
         onSaveClick = {
-
             viewModel.simpanProduk()
         }
     )
