@@ -37,7 +37,6 @@ private val bottomNavRoutes = setOf(
     Screen.Biaya.route,
 )
 
-
 private fun routeToTitle(route: String?): String = when (route) {
     Screen.Beranda.route      -> "Beranda"
     Screen.Kasir.route        -> "Kasir - Transaksi Penjualan"

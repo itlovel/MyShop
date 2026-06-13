@@ -72,9 +72,9 @@ fun KasListScreen(
                     }
                 }
 
-                // 2. TOMBOL KUNING (Terpisah di bawah kartu)
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // button untuk tambah kas baru
                 Button(
                     onClick = onTambahKasClick,
                     modifier = Modifier
