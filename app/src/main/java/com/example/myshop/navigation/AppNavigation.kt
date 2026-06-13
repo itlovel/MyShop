@@ -177,7 +177,6 @@ fun MainNavHost(authViewModel: AuthViewModel, startDestination: String) {
                 val isLoadingData by kasViewModel.isLoadingData.collectAsStateWithLifecycle()
 
                 KasListScreen(
-                    daftarKas        = daftarKas,
                     daftarKas = daftarKas,
                     uiState = uiState,
                     isLoadingData = isLoadingData,
