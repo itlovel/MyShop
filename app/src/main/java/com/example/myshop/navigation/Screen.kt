@@ -21,7 +21,7 @@ sealed class Screen(val route: String) {
     object TambahKas : Screen("tambah_kas")
     object DetailKas : Screen("detail_kas")
     object Stok     : Screen("stok")
-    object Biaya    : Screen("biaya")
+    object Pengeluaran : Screen("pengeluaran")
 
     // Produk
     object TambahProduk : Screen("tambah_produk")
@@ -30,6 +30,12 @@ sealed class Screen(val route: String) {
     }
     object EditProduk : Screen("edit_produk/{produkId}") {
         fun createRoute(produkId: String) = "edit_produk/$produkId"
+    }
+
+    // Pengeluaran
+    object TambahPengeluaran : Screen("tambah_pengeluaran")
+    object DetailPengeluaran : Screen("detail_pengeluaran/{pengeluaranId}") {
+        fun createRoute(pengeluaranId: String) = "detail_pengeluaran/$pengeluaranId"
     }
 
     // Profil
@@ -57,5 +63,5 @@ val bottomNavItems = listOf(
     BottomNavItem(Screen.Kasir,   "Kasir",   Icons.Default.ShoppingCart),
     BottomNavItem(Screen.Kas,     "Kas",     Icons.Default.AccountBalanceWallet),
     BottomNavItem(Screen.Stok,    "Stok",    Icons.Default.Inventory),
-    BottomNavItem(Screen.Biaya,   "Biaya",   Icons.Default.TrendingDown),
+    BottomNavItem(Screen.Pengeluaran, "Pengeluaran", Icons.Default.TrendingDown),
 )
