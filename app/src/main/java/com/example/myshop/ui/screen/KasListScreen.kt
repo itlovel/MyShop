@@ -249,11 +249,18 @@ fun ItemKartuKas(
 
 @Composable
 fun StatusBadge(isActive: Boolean, onClick: () -> Unit) {
-    val greenBase = MaterialTheme.colorScheme.tertiary // EmeraldGreen
-    val redBase = MaterialTheme.colorScheme.error     // BrightRed
+    // Aktif menggunakan hijau dari List Pelanggan, Nonaktif tetap menggunakan merah transparan
+    val bgColor = if (isActive) {
+        Color(0xFFE8F5ED) // Hijau muda soft (Pelanggan style)
+    } else {
+        MaterialTheme.colorScheme.error.copy(alpha = 0.15f) // Merah transparan bawaan
+    }
 
-    val bgColor = if (isActive) greenBase.copy(alpha = 0.15f) else redBase.copy(alpha = 0.15f)
-    val txtColor = if (isActive) greenBase else redBase
+    val txtColor = if (isActive) {
+        com.example.myshop.ui.theme.SuccessGreen // Hijau pekat (Pelanggan style)
+    } else {
+        MaterialTheme.colorScheme.error // Merah solid bawaan
+    }
 
     Box(
         modifier = Modifier

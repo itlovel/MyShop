@@ -127,7 +127,15 @@ fun LogItem(log: KasLogModels) {
     val perubahanSaldo = log.saldoSesudah - log.saldoSebelum
     val isMasuk = perubahanSaldo >= 0
     val nominalTampil = if (perubahanSaldo != 0.0) kotlin.math.abs(perubahanSaldo) else kotlin.math.abs(log.nominal)
-    val nominalColor = if (isMasuk) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
+
+    // --- UBAH DI SINI ---
+    // Jika saldo masuk, gunakan SuccessGreen dari theme. Jika keluar, tetap gunakan warna error (merah)
+    val nominalColor = if (isMasuk) {
+        com.example.myshop.ui.theme.SuccessGreen
+    } else {
+        MaterialTheme.colorScheme.error
+    }
+
     val keterangan = log.keterangan?.takeIf { it.isNotBlank() } ?: log.jenis.replaceFirstChar { it.uppercase() }
 
     Surface(
