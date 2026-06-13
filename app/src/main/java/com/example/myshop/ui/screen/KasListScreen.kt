@@ -51,7 +51,7 @@ fun KasListScreen(
                 ) {
                     Column(
                         modifier = Modifier.padding(vertical = 32.dp, horizontal = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.Start
                     ) {
                         Text(
                             text = "TOTAL SALDO KAS",

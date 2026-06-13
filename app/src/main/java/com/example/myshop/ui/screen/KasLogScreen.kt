@@ -63,34 +63,7 @@ fun KasLogScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = onManualTransactionClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outline
-                )
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Buat Transaksi Kas Manual",
-                    fontWeight = FontWeight.ExtraBold,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
+            
             Text(
                 text = "RIWAYAT TRANSAKSI",
                 style = MaterialTheme.typography.labelLarge,
